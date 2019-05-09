@@ -2,10 +2,67 @@ import cytoscape from 'cytoscape'
 import fcose from 'cytoscape-fcose'
 import euler from 'cytoscape-euler'
 import cxtmenu from 'cytoscape-cxtmenu'
+import $ from 'jquery'
+import contextMenus from 'cytoscape-context-menus'
+
+import 'cytoscape-context-menus/cytoscape-context-menus.css'
 import { createChildren } from '../mock/data'
 cytoscape.use(cxtmenu)
+cytoscape.use(contextMenus, $)
 cytoscape.use(fcose)
 cytoscape.use(euler)
+var options = {
+  // List of initial menu items
+  menuItems: [
+    {
+      id: 'remove', // ID of menu item
+      content: 'remove', // Display content of menu item
+      tooltipText: 'remove', // Tooltip text for menu item
+      image: { src: 'remove.svg', width: 12, height: 12, x: 6, y: 4 }, // menu icon
+      // Filters the elements to have this menu item on cxttap
+      // If the selector is not truthy no elements will have this menu item on cxttap
+      selector: 'node, edge',
+      onClickFunction: function() {
+        // The function to be executed on click
+        console.log('remove element = ', arguments)
+      },
+      disabled: false, // Whether the item will be created as disabled
+      show: true, // Whether the item will be shown or not
+      hasTrailingDivider: true, // Whether the item will have a trailing divider
+      coreAsWell: false // Whether core instance have this item on cxttap
+    },
+    {
+      id: 'hide',
+      content: 'hide',
+      tooltipText: 'hide',
+      selector: 'node, edge',
+      onClickFunction: function() {
+        console.log('hide element')
+      },
+      disabled: true
+    },
+    {
+      id: 'add-node',
+      content: 'add node',
+      tooltipText: 'add node',
+      image: { src: 'add.svg', width: 12, height: 12, x: 6, y: 4 },
+      selector: 'node',
+      coreAsWell: false,
+      onClickFunction: function() {
+        console.log('add node')
+      }
+    }
+  ],
+  // css classes that menu items will have
+  menuItemClasses: [
+    // add class names to this list
+  ],
+  // css classes that context menu will have
+  contextMenuClasses: [
+    // add class names to this list
+  ]
+}
+
 const colors = [
   '#c23531',
   '#2f4554',
@@ -100,7 +157,12 @@ class Cytoscape {
           },
           {
             selector: 'node[label]',
-            style: { label: 'data(label)', 'font-size': '9px', color: '#666', 'z-index': 2 }
+            style: {
+              label: 'data(label)',
+              'font-size': '9px',
+              color: '#666',
+              'z-index': 2
+            }
           },
           {
             selector: 'edge',
@@ -153,11 +215,14 @@ class Cytoscape {
         ],
         minZoom: 0.5,
         maxZoom: 10
+        // userPanningEnabled: false,
+        // boxSelectionEnabled: true
       },
       option || {}
     )
-    this._originalData = null
-    this._clusterData = null
+    this._originalData = {}
+    this._clusterData = {}
+    this._originalElements = null
     this._cytoscape = null
     this._event = []
     this._init()
@@ -210,6 +275,7 @@ class Cytoscape {
       elements: this._data
     })
     this._cytoscape = cytoscape(option)
+    this._originalElements = this._cytoscape.elements()
     ;['mouseover', 'mouseout', 'select'].forEach(item => {
       this._event.push({ type: item, handler: this[`_${item}`] })
       this._cytoscape.on(item, this[`_${item}`])
@@ -218,61 +284,63 @@ class Cytoscape {
   _select(e) {
     let element = e.target
     if (element.isNode || element.isEdge) {
-      this._cytoscapeCxtmenu && this._cytoscapeCxtmenu.destroy()
-      cxtmenuOption.commands = Object.keys(element.data()).map(item => {
-        return {
-          content: item,
-          select: function(ele) {
-            let cy = ele.cy()
-            let collection = cy.collection(createChildren(ele.data().id, 10))
-            let elements = cy.add(collection)
-            let num = -1
-            let degreeCalc = function(
-              num,
-              defalutCount = 10,
-              count = 10,
-              concentric = 0
-            ) {
-              if (num === 0) {
-                return concentric
-              } else if (Math.floor(num / (count + 1)) > 0) {
-                return degreeCalc(
-                  num - count,
-                  defalutCount,
-                  Math.floor(count + defalutCount / 2),
-                  concentric - 1
-                )
-              } else {
-                return concentric - 1
-              }
-            }
-            var layoutOption = {
-              name: 'concentric',
-              fit: false,
-              boundingBox: {
-                x1: ele.position().x - 50,
-                y1: ele.position().y - 50,
-                w: 100,
-                h: 100
-              },
-              concentric: function(node) {
-                num++
-                return degreeCalc(num)
-              },
-              levelWidth: function(nodes) {
-                return 1
-              },
-              animateFilter: function(node, i) {
-                return false
-              }
-            }
-            let elementsWithOwner = cy.elements(ele).merge(elements)
-            var layout = elementsWithOwner.layout(layoutOption)
-            layout.run()
-          }
-        }
-      })
-      this._cytoscapeCxtmenu = this.cxtmenu(cxtmenuOption)
+      // this._cytoscapeCxtmenu && this._cytoscapeCxtmenu.destroy()
+      // cxtmenuOption.commands = Object.keys(element.data()).map(item => {
+      //   return {
+      //     content: item,
+      //     select: function(ele) {
+      //       let cy = ele.cy()
+      //       let collection = cy.collection(createChildren(ele.data().id, 100))
+      //       let elements = cy.add(collection)
+      //       let num = -1
+      //       let degreeCalc = function(
+      //         num,
+      //         defalutCount = 10,
+      //         count = 10,
+      //         concentric = 0
+      //       ) {
+      //         if (num === 0) {
+      //           return concentric
+      //         } else if (Math.floor(num / (count + 1)) > 0) {
+      //           return degreeCalc(
+      //             num - count,
+      //             defalutCount,
+      //             Math.floor(count + defalutCount / 2),
+      //             concentric - 1
+      //           )
+      //         } else {
+      //           return concentric - 1
+      //         }
+      //       }
+      //       var layoutOption = {
+      //         name: 'concentric',
+      //         fit: false,
+      //         boundingBox: {
+      //           x1: ele.position().x - 50,
+      //           y1: ele.position().y - 50,
+      //           w: 100,
+      //           h: 100
+      //         },
+      //         concentric: function(node) {
+      //           num++
+      //           return degreeCalc(num)
+      //         },
+      //         levelWidth: function(nodes) {
+      //           return 1
+      //         },
+      //         animateFilter: function(node, i) {
+      //           return false
+      //         }
+      //       }
+      //       let elementsWithOwner = cy.elements(ele).merge(elements)
+      //       var layout = elementsWithOwner.layout(layoutOption)
+      //       layout.run()
+      //     }
+      //   }
+      // })
+      // this._cytoscapeCxtmenu = this.cxtmenu(cxtmenuOption)
+      var instance = this.contextMenus(options)
+      console.log('instance = ', instance)
     }
   }
   _mouseover(e) {
@@ -310,94 +378,218 @@ class Cytoscape {
     this._event.forEach(e => this._cytoscape.off(e.type, e.handler))
     this._event = []
   }
-  reset() {
-    if (this._clusterData && this._originalData) {
-      this._cytoscape.remove(this._clusterData)
-      this._cytoscape.add(this._originalData)
-    }
+  _getMergedOriginalData() {
+    return Object.keys(this._originalData).reduce(
+      (result, currentValue) => {
+        Object.keys(result).forEach(key => {
+          result[key].merge(this._originalData[currentValue][key])
+        })
+        return result
+      },
+      {
+        nodes: this._cytoscape.collection(),
+        edgesSource: this._cytoscape.collection(),
+        edgesTarget: this._cytoscape.collection()
+      }
+    )
+  }
+  _getMergedClusterData() {
+    return Object.keys(this._clusterData).reduce(
+      (result, currentValue) => {
+        Object.keys(result).forEach(key => {
+          result[key].merge(this._clusterData[currentValue][key])
+        })
+        return result
+      },
+      {
+        nodes: this._cytoscape.collection(),
+        edgesSource: this._cytoscape.collection(),
+        edgesTarget: this._cytoscape.collection()
+      }
+    )
+  }
+  _getAllEdges() {
+    return this._cytoscape.elements('edge').merge(
+      Object.keys(this._originalData).reduce((result, currentValue) => {
+        return result
+          .merge(this._originalData[currentValue].edgesSource)
+          .merge(this._originalData[currentValue].edgesTarget)
+      }, this._cytoscape.collection())
+    )
+  }
+  _hasIdInGraph(id, type = 'node') {
+    return this._cytoscape.elements(`${type}#${id}`).length
+  }
+  _canDrawEdge(data) {
+    return (
+      this._hasIdInGraph(data.source) &&
+      this._hasIdInGraph(data.target) &&
+      !this._hasIdInGraph(data.id, 'edge')
+    )
+  }
+  _canDrawNode(data) {
+    return !this._hasIdInGraph(data.id)
+  }
+  _calcCenterFromNodes(nodes) {
+    return nodes.reduce(
+      (prevVal, ele, i) => {
+        return {
+          x:
+            (((prevVal && prevVal.x) ||
+              (prevVal && prevVal.position && prevVal.position('x')) ||
+              0) *
+              i +
+              (ele.position('x') || 0)) /
+            (i + 1),
+          y:
+            (((prevVal && prevVal.y) ||
+              (prevVal && prevVal.position && prevVal.position('y')) ||
+              0) *
+              i +
+              (ele.position('y') || 0)) /
+            (i + 1)
+        }
+      },
+      {
+        x: 0,
+        y: 0
+      }
+    )
+  }
+  get cytoscape() {
+    return this._cytoscape
+  }
+  data(data) {
+    this.remove()
+    this._cytoscape.add(this._cytoscape.collection(data))
   }
   remove() {
     this._cytoscape.remove(this._cytoscape.elements())
   }
-  clusterByProps(prop, value) {
-    let nodes = this._cytoscape.elements(`node[${prop}="${value}"]`)
-    let elseNodes = this._cytoscape.elements(`node[${prop}!="${value}"]`)
-    let edgesFrom = nodes.edgesTo(elseNodes)
-    let edgesTo = nodes.edgesWith(elseNodes).difference(edgesFrom)
+  /****
+   * 点聚合（图例操作，单个聚合，是否有聚合点）
+   */
+  clusterByProps(prop, value, createNode = false) {
+    if (this._clusterData[`${prop}=${value}`]) return
+    let allNodes = this._cytoscape.elements()
+    let nodes = allNodes.filter(ele => ele.data(prop) === value)
+    let elseNodes = allNodes.filter(ele => ele.data(prop) !== value)
+    let edgesSource = nodes.edgesTo(elseNodes)
+    let edgesTarget = nodes.edgesWith(elseNodes).difference(edgesSource)
     if (nodes.length < 1) return
-    this._originalData = this._originalData || this._cytoscape.collection()
-    this._originalData
-      .merge(nodes)
-      .merge(
-        nodes.edgesWith(
-          this._cytoscape
-            .elements()
-            .filter(ele => !~ele.data('id').indexOf('cluster_'))
+    let _ids = nodes.filter(node => node.isNode()).map(node => node.id())
+    if (createNode) {
+      let randomId = this._createId('cluster_')
+      let _clusterNodes = [
+        {
+          group: 'nodes',
+          data: {
+            _ids,
+            id: randomId,
+            label: `node[${prop}="${value}"]`,
+            group: 'cluster'
+          },
+          position: this._calcCenterFromNodes(nodes)
+        }
+      ]
+      let dataCollection = this._cytoscape.collection(_clusterNodes)
+      this._cytoscape.add(dataCollection)
+      edgesSource.forEach(collection => {
+        collection.forEach(ele => ele.data({ _source: ele.data('source') }))
+        collection.move({ source: randomId })
+      })
+      edgesTarget.forEach(collection => {
+        collection.forEach(ele => ele.data({ _target: ele.data('target') }))
+        collection.move({ target: randomId })
+      })
+      this._clusterData[`${prop}=${value}`] = {
+        nodes: dataCollection,
+        edgesSource: edgesSource.merge(
+          this._getAllEdges().filter(edge => _ids.includes(edge.data('source')))
+        ),
+        edgesTarget: edgesTarget.merge(
+          this._getAllEdges().filter(edge => _ids.includes(edge.data('target')))
         )
+      }
+    }
+    this._originalData[`${prop}=${value}`] = {
+      nodes,
+      edgesSource: edgesSource.merge(
+        this._getAllEdges().filter(edge => _ids.includes(edge.data('source')))
+      ),
+      edgesTarget: edgesTarget.merge(
+        this._getAllEdges().filter(edge => _ids.includes(edge.data('target')))
       )
+    }
     this._cytoscape.remove(nodes)
-    let randomId = this._createId('cluster_')
-    let datass = [
-      {
-        group: 'nodes',
-        data: {
-          id: randomId,
-          label: `node[${prop}="${value}"]`,
-          group: 'cluster'
-        },
-        position: nodes.reduce((prevVal, ele, i) => {
-          if (prevVal) {
-            return {
-              x:
-                (((prevVal && prevVal.x) ||
-                  (prevVal && prevVal.position && prevVal.position('x')) ||
-                  0) *
-                  i +
-                  (ele.position('x') || 0)) /
-                (i + 1),
-              y:
-                (((prevVal && prevVal.y) ||
-                  (prevVal && prevVal.position && prevVal.position('y')) ||
-                  0) *
-                  i +
-                  (ele.position('y') || 0)) /
-                (i + 1)
-            }
+  }
+  /****
+   * 重置聚合（图例操作，单个重置，是否有聚合点）
+   */
+  reset(prop, value) {
+    if (prop === undefined || value === undefined) {
+      // 全部重置
+      let _originalMergeData = this._getMergedOriginalData()
+      let _clusterData = this._getMergedClusterData()
+      this._cytoscape.add(_originalMergeData.nodes)
+      this._cytoscape.add(_originalMergeData.edgesSource)
+      this._cytoscape.add(_originalMergeData.edgesTarget)
+      _clusterData.edgesSource.forEach(edge => {
+        this._cytoscape.collection(edge).move({ source: edge.data('_source') })
+      })
+      _clusterData.edgesTarget.forEach(edge => {
+        this._cytoscape.collection(edge).move({ target: edge.data('_target') })
+      })
+      this._cytoscape.remove(_clusterData.nodes)
+      this._clusterData = {}
+      this._originalData = {}
+    } else if (this._originalData && this._originalData[`${prop}=${value}`]) {
+      // 单个聚合
+      let _originalData = this._originalData[`${prop}=${value}`]
+      this._cytoscape.add(_originalData.nodes)
+      if (this._clusterData[`${prop}=${value}`]) {
+        // 有聚合点的时候
+        this._clusterData[`${prop}=${value}`].edgesSource.forEach(edge => {
+          if (this._hasIdInGraph(edge.id(), 'edge')) {
+            this._cytoscape
+              .collection(edge)
+              .move({ source: edge.data('_source') })
           } else {
-            return {
-              x: ele ? ele.position('x') : 0,
-              y: ele ? ele.position('y') : 0
-            }
+            let ejson = edge.data()
+            ejson.source = ejson._source || ejson.source
+            this._canDrawEdge(ejson) &&
+              this._cytoscape.add({
+                type: 'edges',
+                data: ejson
+              })
           }
         })
+        this._clusterData[`${prop}=${value}`].edgesTarget.forEach(edge => {
+          if (this._hasIdInGraph(edge.id(), 'edge')) {
+            this._cytoscape
+              .collection(edge)
+              .move({ target: edge.data('_target') })
+          } else {
+            let ejson = edge.data()
+            ejson.target = ejson._target || ejson.target
+            this._canDrawEdge(ejson) &&
+              this._cytoscape.add({
+                type: 'edges',
+                data: ejson
+              })
+          }
+        })
+        this._cytoscape.remove(this._clusterData[`${prop}=${value}`].nodes)
       }
-    ]
-    for (let i = 0; i < edgesTo.length; i++) {
-      let dataJson = edgesTo[i].data()
-      datass.push({
-        group: 'edges',
-        data: {
-          id: this._createId('edges_'),
-          source: dataJson.source,
-          target: randomId
-        }
-      })
+      this._cytoscape.add(
+        _originalData.edgesSource.filter(edge => this._canDrawEdge(edge.data()))
+      )
+      this._cytoscape.add(
+        _originalData.edgesTarget.filter(edge => this._canDrawEdge(edge.data()))
+      )
+      delete this._clusterData[`${prop}=${value}`]
+      delete this._originalData[`${prop}=${value}`]
     }
-    for (let i = 0; i < edgesFrom.length; i++) {
-      let dataJson = edgesFrom[i].data()
-      datass.push({
-        group: 'edges',
-        data: {
-          id: this._createId('edges_'),
-          source: randomId,
-          target: dataJson.target
-        }
-      })
-    }
-    let dataCollection = this._cytoscape.collection(datass)
-    this._clusterData = this._clusterData || this._cytoscape.collection()
-    this._clusterData.merge(dataCollection)
-    this._cytoscape.add(dataCollection)
   }
 }
 export default Cytoscape

@@ -18,6 +18,12 @@ function createNodes(num) {
     }
     data.label = data.group + '-node' + i
     data.name = data.group + '-node' + i
+    data.age = 11
+    data.address = '杭州'
+    data.color = 'red'
+    data.weight = '111'
+    data.phone = '13512123421'
+    data.pay = '3000'
     datas.push({
       group: 'nodes',
       data,
