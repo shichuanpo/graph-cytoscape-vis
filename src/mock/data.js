@@ -48,7 +48,8 @@ function createEdges(nodes, num) {
     edges.push({
       data: edge,
       group: 'edges',
-      id: edge.id
+      id: edge.id,
+      time: '2019-05-01'
     })
   }
   return edges
