@@ -1,9 +1,5 @@
 # net-graph
 
-## Demo
-
-[Demo](https://shichuanpo.github.io/graph-cytoscape-vis/dist/index.html)
-
 ## Project setup
 
 ```
