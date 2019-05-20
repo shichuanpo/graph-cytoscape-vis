@@ -1,29 +1,21 @@
 import cytoscape from 'cytoscape'
-import fcose from 'cytoscape-fcose'
-// import euler from 'cytoscape-euler'
-import $ from 'jquery'
-import contextMenus from 'cytoscape-context-menus'
-import 'cytoscape-context-menus/cytoscape-context-menus.css'
 import { mergeArrayConcat, createId } from './util'
-cytoscape.use(contextMenus, $)
-cytoscape.use(fcose)
-// cytoscape.use(euler)
 class Cytoscape {
   constructor(el, data, option) {
     this._el = el
     this._data = data
-    this.option = option || {}
     this._filterData = {}
     this._cytoscape = null
     this._event = []
-    this._init()
+    this._init(option)
   }
-  _init() {
-    let option = mergeArrayConcat({}, this.option, {
+  _init(option) {
+    this.option = option || {}
+    let _option = mergeArrayConcat({}, this.option, {
       container: this._el,
       elements: this._data
     })
-    this._cytoscape = cytoscape(option)
+    this._cytoscape = cytoscape(_option)
     let selector = ''
     ;['mouseover', 'mouseout', 'click', 'cxttap'].forEach(item => {
       this._event.push({ type: item, selector, handler: this[`_${item}`] })
@@ -32,7 +24,7 @@ class Cytoscape {
         : this._cytoscape.on(item, this[`_${item}`])
     })
   }
-  _cxttap(e){
+  _cxttap(e) {
     let element = e.target
     this.elements().unselect()
     if (element.isNode || element.isEdge) {
@@ -89,39 +81,36 @@ class Cytoscape {
     )
   }
   _getAllNodes() {
-    return this._cytoscape.elements('node').merge(
-      Object.keys(this._filterData).reduce((result, currentValue) => {
-        return result.merge(this._filterData[currentValue].nodes)
-      }, this._cytoscape.collection())
+    return (
+      this._cytoscape &&
+      this._cytoscape.elements('node').merge(
+        Object.keys(this._filterData).reduce((result, currentValue) => {
+          return result.merge(this._filterData[currentValue].nodes)
+        }, this._cytoscape.collection())
+      )
     )
   }
   _getAllEdges() {
-    return this._cytoscape.elements('edge').merge(
-      Object.keys(this._filterData).reduce((result, currentValue) => {
-        return result
-          .merge(this._filterData[currentValue].edges)
-      }, this._cytoscape.collection())
-    )
-  }
-  _hasIdInGraph(id, type = 'node') {
-    return this._cytoscape.elements(`${type}#${id}`).length
-  }
-  _canDrawEdge(data) {
     return (
-      this._hasIdInGraph(data.source) &&
-      this._hasIdInGraph(data.target) &&
-      !this._hasIdInGraph(data.id, 'edge')
+      this._cytoscape &&
+      this._cytoscape.elements('edge').merge(
+        Object.keys(this._filterData).reduce((result, currentValue) => {
+          return result.merge(this._filterData[currentValue].edges)
+        }, this._cytoscape.collection())
+      )
     )
   }
-  _canRemoveEdge (data) {
+  _canDrawEdge(edge) {
     return (
-      this._hasIdInGraph(data.source) &&
-      this._hasIdInGraph(data.target) &&
-      this._hasIdInGraph(data.id, 'edge')
+      edge.target() &&
+      edge.target().inside() &&
+      edge.source() &&
+      edge.source().inside() &&
+      !edge.inside()
     )
   }
-  _canDrawNode(data) {
-    return !this._hasIdInGraph(data.id)
+  _canDrawNode(node) {
+    return !node.inside()
   }
   _calcCenterFromNodes(nodes) {
     return nodes.reduce(
@@ -159,14 +148,21 @@ class Cytoscape {
         : this._cytoscape.off(e.type, e.handler)
     )
     this._event = []
-    this._cytoscape.destroy()
+    this._cytoscape && this._cytoscape.unmount()
+    this._cytoscape && this._cytoscape.destroy()
+    this._cytoscape = null
+  }
+  setOptions(option) {
+    this.destroy()
+    this._init(option)
   }
   data(data) {
     if (this._cytoscape) {
       this._cytoscape.resize()
       this.remove()
+      this._data = data
       this._cytoscape.add(data)
-      let layout = this._cytoscape.layout({name: 'fcose'})
+      let layout = this._cytoscape.layout(this.option.layout)
       layout.run()
     }
   }
@@ -175,8 +171,9 @@ class Cytoscape {
   }
   filterNodesByFunction(func) {
     let allNodes = this._getAllNodes()
-    let removeNodes = allNodes.filter(node => !func(node) && this._hasIdInGraph(node.id()))
-    let removeEdges = removeNodes.connectedEdges().filter(edge => this._canRemoveEdge(edge.data()))
+    if (!allNodes) return
+    let removeNodes = allNodes.filter(node => !func(node) && node.inside())
+    let removeEdges = removeNodes.connectedEdges().filter(edge => edge.inside())
     let _randomId = createId('func')
     this._filterData[_randomId] = {
       nodes: removeNodes,
@@ -187,11 +184,14 @@ class Cytoscape {
   }
   filterEdgesByFunction(func) {
     let allEdges = this._getAllEdges()
-    let removeEdges = allEdges.filter(edge => !func(edge) && this._canRemoveEdge(edge.data()))
+    if (!allEdges) return
+    let removeEdges = allEdges.filter(edge => !func(edge) && edge.inside())
     let removeNodes = removeEdges
       .sources()
       .merge(removeEdges.targets())
-      .filter(node => removeEdges.contains(node.connectedEdges()) && this._hasIdInGraph(node.id()))
+      .filter(
+        node => removeEdges.contains(node.connectedEdges()) && node.inside()
+      )
     let _randomId = createId('func')
     this._filterData[_randomId] = {
       nodes: removeNodes,
@@ -201,18 +201,29 @@ class Cytoscape {
     this._cytoscape.remove(removeEdges)
     return _randomId
   }
-  reset (id) {
+  reset(id) {
     let _filterMergeData
     if (id) {
       _filterMergeData = this._filterData[id]
     } else {
       _filterMergeData = this._getMergedData(this._filterData)
     }
-    this._cytoscape.add(_filterMergeData.nodes.filter(node => this._canDrawNode(node.data())))
-    let _canDrawEdges = _filterMergeData.edges.filter(edge => this._canDrawEdge(edge.data()))
+    this._cytoscape.add(
+      _filterMergeData.nodes.filter(node => this._canDrawNode(node))
+    )
+    let _canDrawEdges = _filterMergeData.edges.filter(edge =>
+      this._canDrawEdge(edge)
+    )
+    // 把画不出来的线归到其他的集合里面。因为线有两个属性（source， target）
     let _cannotDrawEdges = _filterMergeData.edges.difference(_canDrawEdges)
     Object.keys(this._filterData).forEach(key => {
-      this._filterData[key].edges.merge(_cannotDrawEdges.filter(edge => this._filterData[key].nodes.getElementById(edge.data('source')) || this._filterData[key].nodes.getElementById(edge.data('target'))))
+      this._filterData[key].edges.merge(
+        _cannotDrawEdges.filter(
+          edge =>
+            this._filterData[key].nodes.getElementById(edge.data('source')) ||
+            this._filterData[key].nodes.getElementById(edge.data('target'))
+        )
+      )
     })
     this._cytoscape.add(_canDrawEdges)
     if (id) {

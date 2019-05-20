@@ -1,12 +1,11 @@
 <template lang="pug">
-  .cytoscape(ref="cytoscape")
-    .buttons
-      .checkbox(v-for="(gr, index) in groups", onselectstart="return false;", @click="checkboxChange(index)")
-        span.color(:style="{ 'background': checkBoxModel[index] ? colorByGroup[gr] : 'none', border: `1px solid ${colorByGroup[gr]}` }")
-          img(:src="imgByGroup[gr]", height="100%;", v-if="checkBoxModel[index]")
-        span.text {{gr}}
-      //- button(@click="reset") reset
-      //- button(@click="$cy && $cy.filterEdgesByFunction(edge => edge.data('time'))") 边过滤
+.cytoscapeContainer
+  .cytoscape(ref="cytoscapeContainer")
+  .buttons(v-if="legend.show")
+    .checkbox(v-for="(gr, index) in groups", onselectstart="return false;", @click="checkboxChange(index)")
+      span.color(:style="{ 'background': checkBoxModel[index] ? colorByGroup[gr] : 'none', border: `1px solid ${colorByGroup[gr]}` }")
+        img(:src="imgByGroup[gr]", height="100%;", v-if="checkBoxModel[index]")
+      span.text {{gr}}
 </template>
 <script>
 import mockdata from '../mock/data';
@@ -15,7 +14,7 @@ import { merge, mergeArrayFindSelector, mergeArrayReplace, isObject, isArray } f
 import defaultOption from './defaultOption.js'
 
 export default {
-  name: 'cytoscape',
+  name: 'vue-cytoscape',
   props: {
     options: {
       type: Object,
@@ -35,14 +34,12 @@ export default {
       $cy: null,
       timeStamp: 0,
       checkBoxModel: [],
-      filterIds: {}
+      filterIds: {},
+      defaultColor: '#ccc',
+      defaultImage: undefined
     };
   },
   computed: {
-    grid () {
-      let grid = JSON.parse(JSON.stringify(defaultOption.grid || {}))
-      return mergeArrayReplace(grid, this.options.grid) || {}
-    },
     colors () {
       if (this.options.group && this.options.group.colors) {
         let colors = JSON.parse(JSON.stringify(this.options.group.colors))
@@ -65,6 +62,9 @@ export default {
       }
       return defaultOption.group && defaultOption.group.images || {}
     },
+    groupBy () {
+      return this.options.group && (this.options.group.data || this.options.group.key) || defaultOption.group.key
+    },
     legend () {
       let legend = JSON.parse(JSON.stringify(defaultOption.legend || {}))
       return mergeArrayReplace(legend, this.options.legend || {}) || {}
@@ -78,19 +78,18 @@ export default {
             'content': 'data(name)',
             'shape': 'barrel',
             'background-color': (ele) => {
-              return ele.data(this.legend.key)
-                ? this.colorByGroup[ele.data(this.legend.key)] || '#ccc'
-                : '#ccc'
+              let groupName = this.dataByGroup(ele.data())
+              return this.colorByGroup[groupName] || this.defaultColor
             },
             'background-image': (ele) => {
-              return ele.data(this.legend.key)
-                ? this.imgByGroup[ele.data(this.legend.key)] || 'none'
-                : 'none'
+              let groupName = this.dataByGroup(ele.data())
+              return this.imgByGroup[groupName] || this.defaultImage
             },
             'background-width': '80%',
             'background-height': '80%',
             'background-repeat': 'no-repeat',
             'background-opacity': 0.6,
+            'background-image-opacity': 0.6,
             'z-index-compare': 'manual',
             'z-index': 2
           }
@@ -99,44 +98,75 @@ export default {
     },
     groups () {
       return Array.from(
-        new Set(this.data.filter(dat => dat.group === 'nodes').map(dat => dat.data[this.legend.key]).filter(g => !!g))
+        new Set(this.data.filter(dat => dat.group === 'nodes').map(dat => this.dataByGroup(dat.data)).filter(g => !!g))
       )
     },
     colorByGroup () {
-      if (isObject(this.colors)) {
-        return this.colors
-      }
       let colorGroup = {}
-      this.groups.forEach((g, idx) => {
-        idx = idx % this.colors.length
-        colorGroup[g] = this.colors[idx]
-      })
+      if (isArray(this.colors)) {
+        this.groups.forEach((g, idx) => {
+          idx = idx % this.colors.length
+          colorGroup[g] = this.colors[idx]
+        })
+      } else if (isObject(this.colors)) {
+        colorGroup = this.colors
+      }
+      if (isArray(this.groupBy)) {
+        this.groupBy.forEach(({ color, name }) => {
+          colorGroup[name] = color || colorGroup[name] || this.defaultColor
+        })
+      }
       return colorGroup
     },
     imgByGroup () {
-      if (isObject(this.images)) {
-        return this.images
-      }
       let imgGroup = {}
-      this.groups.forEach((g, idx) => {
-        idx = idx % this.images.length
-        imgGroup[g] = this.images[idx]
-      })
+      if (isArray(this.images)) {
+        this.groups.forEach((g, idx) => {
+          idx = idx % this.images.length
+          imgGroup[g] = this.images[idx]
+        })
+      } else if (isObject(this.images)) {
+        imgGroup = this.images
+      }
+      if (isArray(this.groupBy)) {
+        this.groupBy.forEach(({ image, name }) => {
+          imgGroup[name] = image || imgGroup[name] || this.defaultImage
+        })
+      }
       return imgGroup
     }
   },
   watch: {
     data: {
       handler (newValue) {
-        if (this.$cy) {
-          this.$cy.data(newValue)
-          this.checkBoxModel = this.groups.map(() => true)
+        this.$cy && this.setData(newValue)
+      },
+      deep: true
+    },
+    options: {
+      handler () {
+        this.$cy && this.setOptions()
+      },
+      deep: true
+    },
+    groups: {
+      handler (newGroups) {
+        if (newGroups) {
+          this.checkBoxModel = newGroups.map(() => true)
         }
       },
       deep: true
     }
   },
   methods: {
+    dataByGroup (data) {
+      if (isArray(this.groupBy)) {
+        let _group = this.groupBy.find(group => group.matching(data))
+        return _group ? _group.name : undefined
+      } else {
+        return data[this.groupBy]
+      }
+    },
     checkboxChange (index) {
       let ntime = new Date().getTime()
       if (ntime - this.timeStamp < 200) {
@@ -153,7 +183,7 @@ export default {
             this.$cy.reset(this.filterIds[gr])
             delete this.filterIds[gr]
           } else if (!this.checkBoxModel[idx] && !this.filterIds[gr]) {
-            this.filterIds[gr] = this.$cy.filterNodesByFunction(ele => ele.data(this.legend.key) !== gr)
+            this.filterIds[gr] = this.$cy.filterNodesByFunction(ele => this.dataByGroup(ele.data()) !== gr)
           }
         })
       } else {
@@ -165,10 +195,20 @@ export default {
             this.$cy.reset(this.filterIds[gr])
             delete this.filterIds[gr]
           } else {
-            this.filterIds[gr] = this.$cy.filterNodesByFunction(ele => ele.data(this.legend.key) !== gr)
+            this.filterIds[gr] = this.$cy.filterNodesByFunction(ele => this.dataByGroup(ele.data()) !== gr)
           }
         }, 200)
       }
+    },
+    setData (data) {
+      this.$nextTick(() => {
+        this.$cy && this.$cy.data(data)
+      })
+    },
+    setOptions () {
+      this.$nextTick(() => {
+        this.$cy && this.$cy.setOptions(this.cytoscapeOptions)
+      })
     },
     reset (id) {
       this.$cy && this.$cy.reset(id)
@@ -179,60 +219,41 @@ export default {
     filterNodesByFunction (func) {
       return this.$cy && this.$cy.filterNodesByFunction(func)
     },
-    createContextMenu (e) {
-      let element = e.target
-      if (element.isNode || element.isEdge) {
-        this.$contextMenus && this.$contextMenus.destroy()
-        this.$contextMenus = this.$cy.cytoscape.contextMenus({
-          menuItems: Object.keys(element.data()).map(key => {
-            return {
-              id: key, // ID of menu item
-              content: `${key}: ${element.data(key)}`, // Display content of menu item
-              // tooltipText: 'remove', // Tooltip text for menu item
-              // image: {src : "remove.svg", width : 12, height : 12, x : 6, y : 4}, // menu icon
-              // Filters the elements to have this menu item on cxttap
-              // If the selector is not truthy no elements will have this menu item on cxttap
-              selector: 'node, edge',
-              onClickFunction: function () { // The function to be executed on click
-                console.log('remove element');
-              },
-              disabled: false, // Whether the item will be created as disabled
-              show: true, // Whether the item will be shown or not
-              hasTrailingDivider: true, // Whether the item will have a trailing divider
-              coreAsWell: false // Whether core instance have this item on cxttap
-            }
-          })
-        })
-      }
+    getCytoscape () {
+      return this.$cy.cytoscape
+    },
+    createCytoscape () {
+      this.$cy && this.$cy.destroy()
+      let container = this.$refs.cytoscapeContainer
+      this.$cy = new Cytoscape(container, this.data, this.cytoscapeOptions)
     }
   },
   mounted () {
-    let container = this.$refs.cytoscape
-    this.checkBoxModel = this.groups.map(() => true)
-    this.$cy = new Cytoscape(container, this.data, this.cytoscapeOptions)
-    this.$cy.cytoscape.on('mouseover', this.createContextMenu)
+    this.createCytoscape()
   },
   beforeDestroy () {
-    this.$contextMenus && this.$contextMenus.destroy()
-    this.$cy.cytoscape.off('mouseover', this.createContextMenu)
     this.$cy.destroy()
   }
 };
 </script>
 <style lang="less" scoped>
-.cytoscape {
+.cytoscapeContainer {
   text-align: left;
   position: relative;
   width: 100%;
   height: 100%;
   z-index: 999;
+  .cytoscape {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
 }
 .buttons {
   position: absolute;
   left: 0;
   top: 0;
   text-align: center;
-  z-index: 1000;
   .checkbox {
     margin: 0 5px;
     display: inline-block;

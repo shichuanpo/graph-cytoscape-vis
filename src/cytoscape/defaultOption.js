@@ -1,8 +1,9 @@
 const options = {
   legend: {
-    key: 'group'
+    show: false
   },
   group: {
+    key: 'group',
     colors: [
       '#c23531',
       '#2f4554',
@@ -19,7 +20,7 @@ const options = {
   },
   cytoscape: {
     layout: {
-      name: 'fcose',
+      name: 'cose',
       randomize: true,
       animate: false
     },
@@ -33,7 +34,7 @@ const options = {
       {
         selector: 'node:selected',
         style: {
-          'border-color': 'rgba(5, 161, 140, 1)',
+          'border-color': 'rgb(5, 161, 140)',
           'border-width': 2
         }
       },
@@ -41,7 +42,9 @@ const options = {
         selector: 'node',
         style: {
           'content': 'data(name)',
-          'background-color': 'rgba(5, 161, 140, 0.7)',
+          'background-color': 'rgb(5, 161, 140)',
+          'background-opacity': 0.6,
+          'background-image-opacity': 0.6,
           'z-index-compare': 'manual',
           'z-index': 2
         }
@@ -77,6 +80,7 @@ const options = {
           'line-color': '#aaa',
           color: '#333',
           'background-opacity': 1,
+          'background-image-opacity': 1,
           'z-index': 99
         }
       },
@@ -94,6 +98,7 @@ const options = {
           'line-color': '#eee',
           color: '#eee',
           'background-opacity': 0.3,
+          'background-image-opacity': 0.3,
           'z-index': 0
         }
       },
