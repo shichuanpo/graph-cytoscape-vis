@@ -4,7 +4,10 @@ const isObject = function(item) {
 const isArray = function(item) {
   return Object.prototype.toString.call(item) === '[object Array]'
 }
-const __merge = function(type="merge", target, source) {
+const isFunction = function(item) {
+  return Object.prototype.toString.call(item) === '[object Function]'
+}
+const __merge = function(type = 'merge', target, source) {
   if (isObject(target) && isObject(source)) {
     for (let key in source) {
       if (isObject(source[key]) && isObject(target[key])) {
@@ -37,7 +40,7 @@ const __merge = function(type="merge", target, source) {
   }
   return target
 }
-const _merge = function () {
+const _merge = function() {
   let objs = Array.from(arguments)
   if (objs.length < 2) {
     console.error('target or source cannot be null')
@@ -52,11 +55,11 @@ const _merge = function () {
     console.error('target or source cannot be null')
   }
 }
-const merge = function () {
+const merge = function() {
   let objs = Array.from(arguments)
   return _merge('merge', ...objs)
 }
-const mergeArrayFindSelector = function () {
+const mergeArrayFindSelector = function() {
   let objs = Array.from(arguments)
   return _merge('findSelector', ...objs)
 }
@@ -78,4 +81,13 @@ const createId = function(salt, randomLength = 8) {
     ).toString(36)
   )
 }
-export { isObject, isArray, merge, mergeArrayFindSelector, mergeArrayConcat, mergeArrayReplace, createId }
+export {
+  isObject,
+  isArray,
+  isFunction,
+  merge,
+  mergeArrayFindSelector,
+  mergeArrayConcat,
+  mergeArrayReplace,
+  createId
+}

@@ -23,15 +23,29 @@ export default {
     return {
       $contextMenus: null,
       options: {
-        legend: { show: true },
-        group: {
-          key: 'group',
+        legend: {
+          show: true,
+          formatter: str => {
+            let translate = {
+              hospital: '医院',
+              clothes: '衣服',
+              computer: '电脑',
+              person: '个人'
+            }
+            Object.keys(translate).forEach(key => {
+              str = str.replace(key, translate[key])
+            })
+            return str
+          }
+        },
+        category: {
+          key: 'label',
           images: {
             hospital,
             clothes,
             computer,
             person
-          }
+          },
         },
         cytoscape: {
           layout: {
