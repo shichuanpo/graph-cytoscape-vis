@@ -1,7 +1,7 @@
 <template lang="pug">
 .cytoscapeContainer
   .legend.legendCalc(v-if="legend.show", :style="legend.style", :class="[legend.orient, legend.type]", ref="legend")
-    .checkbox(
+    .item(
       v-for="(categoryName, index) in categorys",
       :style="getItemGapStyle()",
       :key="categoryName",
@@ -11,24 +11,24 @@
       span.text(:style="legend.textStyle") {{legend.formatter ? legend.formatter(categoryName) : categoryName}}
     .pagination(ref="pagination")
       a.pageButton.triangle_border_left
-      span {{currentPage}} / {{checkboxs.length}}
+      span {{currentPage}} / {{items.length}}
       a.pageButton.triangle_border_right
   .legend(v-if="legend.show", :style="legend.style", :class="[legend.orient, legend.type]")
-    .checkboxs(v-for="(_checkboxs, _checkboxsIdx) in checkboxs", v-if="_checkboxsIdx === currentPage - 1 || legend.type !== 'scroll'", :style="{float:checkboxsFloat}")
-      .checkbox(
-        v-for="(_checkbox, _checkboxIdx) in _checkboxs",
-        @click="checkboxChange(getCategoryIndex(_checkboxsIdx, _checkboxIdx))",
+    .items(v-for="(_items, _itemsIdx) in items", v-if="_itemsIdx === currentPage - 1 || legend.type !== 'scroll'", :style="{float:itemsFloat}")
+      .item(
+        v-for="(_item, _itemIdx) in _items",
+        @click="itemChange(getCategoryIndex(_itemsIdx, _itemIdx))",
         onselectstart="return false;",
-        :key="_checkbox+_checkboxIdx+_checkboxIdx",
+        :key="_item+_itemIdx+_itemIdx",
         :style="getItemGapStyle()"
       )
-        span.tag(:style="getTagStyle(_checkboxsIdx, _checkboxIdx)")
-          img(:src="imgByCategory[_checkbox]", height="100%", v-if="checkBoxModel[getCategoryIndex(_checkboxsIdx, _checkboxIdx)]")
-        span.text(:style="getTextStyle(_checkboxsIdx, _checkboxIdx)", :title="legend.formatter ? legend.formatter(_checkbox) : _checkbox") {{legend.formatter ? legend.formatter(_checkbox) : _checkbox}}
-    .pagination(v-if="checkboxs.length > 1 && legend.type === 'scroll'")
+        span.tag(:style="getTagStyle(_itemsIdx, _itemIdx)")
+          img(:src="imgByCategory[_item]", height="100%", v-if="checkBoxModel[getCategoryIndex(_itemsIdx, _itemIdx)]")
+        span.text(:style="getTextStyle(_itemsIdx, _itemIdx)", :title="legend.formatter ? legend.formatter(_item) : _item") {{legend.formatter ? legend.formatter(_item) : _item}}
+    .pagination(v-if="items.length > 1 && legend.type === 'scroll'")
       a.pageButton.triangle_border_left(@click="pageChange('sub')", :class="{'disabled': currentPage <= 1}")
-      span {{currentPage}} / {{checkboxs.length}}
-      a.pageButton.triangle_border_right(@click="pageChange('add')", :class="{'disabled': currentPage >= checkboxs.length}")
+      span {{currentPage}} / {{items.length}}
+      a.pageButton.triangle_border_right(@click="pageChange('add')", :class="{'disabled': currentPage >= items.length}")
   .cytoscape(ref="cytoscapeContainer")
 </template>
 <script>
@@ -61,8 +61,8 @@ export default {
       filterIds: {},
       defaultColor: '#ccc',
       defaultImage: '#ccc',
-      checkboxs: [],
-      checkboxsFloat: 'left',
+      items: [],
+      itemsFloat: 'left',
       getCheckboxsNextTick: () => { this.$nextTick(this.getCheckboxs) },
       currentPage: 1
     };
@@ -162,7 +162,7 @@ export default {
         imgCategory = this.images
       }
       if (isArray(this.categoryBy)) {
-        this.categoryBy.forEach(({ image, name }) => {
+        this.categoryBy.forEach(({ image, name, matching }) => {
           let _image = image
           if (isFunction(image)) {
             let datas = this.data.map(d => d.data).filter(d => matching && matching(d))
@@ -199,14 +199,14 @@ export default {
   },
   methods: {
     pageChange (type = 'add') {
-      if (type === 'add' && this.currentPage < this.checkboxs.length) {
+      if (type === 'add' && this.currentPage < this.items.length) {
         this.currentPage++
       } else if (type === 'sub' && this.currentPage > 1) {
         this.currentPage--
       }
     },
     getCategoryIndex (idx1, idx2) {
-      return this.checkboxs.slice(0, idx1).reduce((result, current) => {
+      return this.items.slice(0, idx1).reduce((result, current) => {
         return result + current.length
       }, 0) + idx2
     },
@@ -249,9 +249,9 @@ export default {
       let allWidth = this.$refs.cytoscapeContainer.clientWidth - (padding.left + padding.right + margin.left + margin.right + border.left + border.right)
       let itemsHeight = 0
       let itemsWidth = 0
-      let checkboxs = []
-      let checkboxsIdx = 0
-      this.checkboxsFloat = 'left'
+      let items = []
+      let itemsIdx = 0
+      this.itemsFloat = 'left'
       let paginationWidth = this.$refs.pagination.clientWidth
       let paginationHeight = this.$refs.pagination.clientHeight
       if (this.legend.orient === 'horizontal') {
@@ -263,19 +263,19 @@ export default {
             allWidth -= paginationWidth
           }
         }
-        this.categorys.forEach((category, idx) => {
+        this.categorys.forEach(category => {
           let itemWidth = this.$refs[category][0].offsetWidth + (this.legend.itemGap || 0)
           itemsWidth += itemWidth
           if (itemsWidth > allWidth) {
             itemsWidth = itemWidth
-            checkboxsIdx += 1
+            itemsIdx += 1
           }
-          checkboxs[checkboxsIdx] = checkboxs[checkboxsIdx] || []
-          checkboxs[checkboxsIdx].push(category)
+          items[itemsIdx] = items[itemsIdx] || []
+          items[itemsIdx].push(category)
         })
       } else {
         if (Number(left.replace('px', '')) > allWidth / 2) {
-          this.checkboxsFloat = 'right'
+          this.itemsFloat = 'right'
         }
         if (this.legend.type === 'scroll') {
           let allItemsHeight = this.categorys.reduce((total, category) => {
@@ -285,22 +285,22 @@ export default {
             allHeight -= paginationHeight
           }
         }
-        this.categorys.forEach((category, idx) => {
+        this.categorys.forEach(category => {
           let itemHeight = this.$refs[category][0].offsetHeight + (this.legend.itemGap || 0)
           itemsHeight += itemHeight
           if (itemsHeight > allHeight) {
             itemsHeight = itemHeight
-            checkboxsIdx += 1
+            itemsIdx += 1
           }
-          checkboxs[checkboxsIdx] = checkboxs[checkboxsIdx] || []
-          checkboxs[checkboxsIdx].push(category)
+          items[itemsIdx] = items[itemsIdx] || []
+          items[itemsIdx].push(category)
         })
       }
-      this.checkboxs = checkboxs
+      this.items = items
     },
     getTagStyle (idx1, idx2) {
       let model = this.checkBoxModel[this.getCategoryIndex(idx1, idx2)]
-      let category = this.checkboxs[idx1][idx2]
+      let category = this.items[idx1][idx2]
       let defaultStyle = Object.assign({}, this.legend.tagStyle, {
         'background': this.colorByCategory[category],
         border: `1px solid ${this.colorByCategory[category]}`
@@ -309,7 +309,7 @@ export default {
     },
     getTextStyle (idx1, idx2) {
       let model = this.checkBoxModel[this.getCategoryIndex(idx1, idx2)]
-      let category = this.checkboxs[idx1][idx2]
+      let category = this.items[idx1][idx2]
       let defaultStyle = Object.assign({}, this.legend.textStyle, {
         'color': this.colorByCategory[category]
       })
@@ -341,7 +341,7 @@ export default {
         return data[this.categoryBy]
       }
     },
-    checkboxChange (index) {
+    itemChange (index) {
       let ntime = new Date().getTime()
       if (ntime - this.timeStamp < 200) {
         this.timeStamp = ntime
@@ -435,7 +435,7 @@ export default {
   clear: both;
   z-index: 1000;
   &.horizontal {
-    .checkbox {
+    .item {
       display: inline-block;
       vertical-align: top;
     }
@@ -443,7 +443,7 @@ export default {
   &.horizontal.scroll {
     overflow: hidden;
     white-space: nowrap;
-    .checkboxs {
+    .items {
       float: none !important;
       display: inline-block;
       vertical-align: top;
@@ -456,7 +456,7 @@ export default {
   &.vertical {
     display: block;
     &.scroll {
-      .checkboxs {
+      .items {
         float: none !important;
       }
       .pagination {
@@ -468,7 +468,7 @@ export default {
       }
     }
     // writing-mode: vertical-lr;
-    // .checkbox {
+    // .item {
     //   text-align: left;
     //   writing-mode: horizontal-tb;
     //   float: left;
@@ -480,7 +480,7 @@ export default {
     //   }
     // }
   }
-  .checkbox {
+  .item {
     overflow: hidden;
     cursor: pointer;
     white-space: nowrap;

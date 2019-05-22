@@ -9,7 +9,7 @@ const options = {
     style: {
       padding: '10px',
       top: 0,
-      right: 0
+      left: 0
     },
     itemGap: 10,
     /**
