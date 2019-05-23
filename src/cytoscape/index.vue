@@ -14,17 +14,19 @@
       span {{currentPage}} / {{items.length}}
       a.pageButton.triangle_border_right
   .legend(v-if="legend.show", :style="legend.style", :class="[legend.orient, legend.type]")
-    .items(v-for="(_items, _itemsIdx) in items", v-if="_itemsIdx === currentPage - 1 || legend.type !== 'scroll'", :style="{float:itemsFloat}")
-      .item(
-        v-for="(_item, _itemIdx) in _items",
-        @click="itemChange(getCategoryIndex(_itemsIdx, _itemIdx))",
-        onselectstart="return false;",
-        :key="_item+_itemIdx+_itemIdx",
-        :style="getItemGapStyle()"
-      )
-        span.tag(:style="getTagStyle(_itemsIdx, _itemIdx)")
-          img(:src="imgByCategory[_item]", height="100%", v-if="checkBoxModel[getCategoryIndex(_itemsIdx, _itemIdx)]")
-        span.text(:style="getTextStyle(_itemsIdx, _itemIdx)", :title="legend.formatter ? legend.formatter(_item) : _item") {{legend.formatter ? legend.formatter(_item) : _item}}
+    .itemsbox(:style="legend.orient === 'vertical' ? {height: legendHeight + 'px'} : {width: legendWidth + 'px'}")
+      div(:style='getItemScrollStyle()')
+        .items(v-for="(_items, _itemsIdx) in items", :style="{float:itemsFloat, opacity: _itemsIdx === currentPage - 1 || legend.type !== 'scroll' ? 1 : 0.3}", :ref="`items${_itemsIdx}`")
+          .item(
+            v-for="(_item, _itemIdx) in _items",
+            @click="itemChange(getCategoryIndex(_itemsIdx, _itemIdx))",
+            onselectstart="return false;",
+            :key="_item+_itemIdx+_itemIdx",
+            :style="getItemGapStyle()"
+          )
+            span.tag(:style="getTagStyle(_itemsIdx, _itemIdx)")
+              img(:src="imgByCategory[_item]", height="100%", v-if="checkBoxModel[getCategoryIndex(_itemsIdx, _itemIdx)]")
+            span.text(:style="getTextStyle(_itemsIdx, _itemIdx)", :title="legend.formatter ? legend.formatter(_item) : _item") {{legend.formatter ? legend.formatter(_item) : _item}}
     .pagination(v-if="items.length > 1 && legend.type === 'scroll'")
       a.pageButton.triangle_border_left(@click="pageChange('sub')", :class="{'disabled': currentPage <= 1}")
       span {{currentPage}} / {{items.length}}
@@ -61,7 +63,10 @@ export default {
       filterIds: {},
       defaultColor: '#ccc',
       defaultImage: '#ccc',
+      legendWidth: 0,
+      legendHeight: 0,
       items: [],
+      itemsWH: [],
       itemsFloat: 'left',
       getCheckboxsNextTick: () => { this.$nextTick(this.getCheckboxs) },
       currentPage: 1
@@ -245,8 +250,8 @@ export default {
         bottom: Number(borderBottomWidth.replace('px', '')),
         right: Number(borderRightWidth.replace('px', ''))
       }
-      let allHeight = this.$refs.cytoscapeContainer.clientHeight - (padding.top + padding.bottom + margin.top + margin.bottom + border.top + border.bottom)
-      let allWidth = this.$refs.cytoscapeContainer.clientWidth - (padding.left + padding.right + margin.left + margin.right + border.left + border.right)
+      this.legendHeight = this.$refs.cytoscapeContainer.clientHeight - (padding.top + padding.bottom + margin.top + margin.bottom + border.top + border.bottom)
+      this.legendWidth = this.$refs.cytoscapeContainer.clientWidth - (padding.left + padding.right + margin.left + margin.right + border.left + border.right)
       let itemsHeight = 0
       let itemsWidth = 0
       let items = []
@@ -259,14 +264,16 @@ export default {
           let allItemsWidth = this.categorys.reduce((total, category) => {
             return this.$refs[category][0].offsetWidth + (this.legend.itemGap || 0) + total
           }, 0)
-          if (allItemsWidth > allWidth) {
-            allWidth -= paginationWidth
+          if (allItemsWidth > this.legendWidth) {
+            this.legendWidth -= paginationWidth
           }
         }
         this.categorys.forEach(category => {
           let itemWidth = this.$refs[category][0].offsetWidth + (this.legend.itemGap || 0)
           itemsWidth += itemWidth
-          if (itemsWidth > allWidth) {
+          if (itemsWidth > this.legendWidth) {
+            this.itemsWH[itemsIdx] = this.itemsWH[itemsIdx] || {}
+            this.itemsWH[itemsIdx].width = itemsWidth - itemWidth
             itemsWidth = itemWidth
             itemsIdx += 1
           }
@@ -274,21 +281,23 @@ export default {
           items[itemsIdx].push(category)
         })
       } else {
-        if (Number(left.replace('px', '')) > allWidth / 2) {
+        if (Number(left.replace('px', '')) > this.legendWidth / 2) {
           this.itemsFloat = 'right'
         }
         if (this.legend.type === 'scroll') {
           let allItemsHeight = this.categorys.reduce((total, category) => {
             return this.$refs[category][0].offsetHeight + (this.legend.itemGap || 0) + total
           }, 0)
-          if (allItemsHeight > allHeight) {
-            allHeight -= paginationHeight
+          if (allItemsHeight > this.legendHeight) {
+            this.legendHeight -= paginationHeight
           }
         }
         this.categorys.forEach(category => {
           let itemHeight = this.$refs[category][0].offsetHeight + (this.legend.itemGap || 0)
           itemsHeight += itemHeight
-          if (itemsHeight > allHeight) {
+          if (itemsHeight > this.legendHeight) {
+            this.itemsWH[itemsIdx] = this.itemsWH[itemsIdx] || {}
+            this.itemsWH[itemsIdx].height = itemsHeight - itemHeight
             itemsHeight = itemHeight
             itemsIdx += 1
           }
@@ -314,6 +323,30 @@ export default {
         'color': this.colorByCategory[category]
       })
       return Object.assign(defaultStyle, model ? this.legend.activeTextStyle : this.legend.inactiveTextStyle)
+    },
+    getItemScrollStyle () {
+      let style = {}
+      if (this.legend.type === 'scroll') {
+        if (this.legend.orient === 'horizontal') {
+          let left = this.itemsWH.slice(0, this.currentPage - 1).reduce((total, current) => {
+            return total + current.width
+          }, 0)
+          style['margin-left'] = -left + 'px'
+          return {
+            'margin-left': -left + 'px',
+            transition: 'all 0.6s'
+          }
+        } else if (this.legend.orient === 'vertical') {
+          let top = this.itemsWH.slice(0, this.currentPage - 1).reduce((total, current) => {
+              return total + current.height
+            }, 0)
+          style['margin-top'] = -top + 'px'
+        }
+        if (this.legend.animation) {
+          style.transition = `all ${this.legend.animationDurationUpdate}s`
+        }
+      }
+      return style
     },
     getItemGapStyle () {
       let styleText = `${this.legend.itemGap || 0}px`
@@ -449,8 +482,9 @@ export default {
       vertical-align: top;
       font-size: 0;
     }
-    .pagination {
-      float: right;
+    .itemsbox, .pagination {
+      display: inline-block;
+      vertical-align: middle;
     }
   }
   &.vertical {
@@ -459,26 +493,14 @@ export default {
       .items {
         float: none !important;
       }
-      .pagination {
-        text-align: center;
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
+      .itemsbox, .pagination {
+        display: block;
       }
     }
-    // writing-mode: vertical-lr;
-    // .item {
-    //   text-align: left;
-    //   writing-mode: horizontal-tb;
-    //   float: left;
-    //   .text {
-    //     width: 80px;
-    //     overflow: hidden; /*超出部分隐藏*/
-    //     text-overflow: ellipsis; /* 超出部分显示省略号 */
-    //     white-space: nowrap; /*规定段落中的文本不进行换行 */
-    //   }
-    // }
+  }
+  .itemsbox{
+    font-size: 0;
+    overflow: hidden;
   }
   .item {
     overflow: hidden;
@@ -496,14 +518,12 @@ export default {
   .pagination {
     position: relative;
     z-index: 1000;
-    height: 17px;
-    line-height: 17px;
     font-size: 0;
     white-space: nowrap;
+    text-align: center;
     .pageButton {
       display: inline-block;
-      vertical-align: top;
-      margin-top: 2px;
+      vertical-align: middle;
       cursor: pointer;
       &.triangle_border_left.disabled {
         border-color: transparent #999 transparent transparent;
@@ -515,6 +535,7 @@ export default {
       }
     }
     span {
+      vertical-align: middle;
       font-size: 14px;
       margin: 0 5px;
     }

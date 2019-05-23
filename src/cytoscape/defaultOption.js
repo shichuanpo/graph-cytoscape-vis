@@ -7,11 +7,14 @@ const options = {
      * 图例容器的样式，标准写法 (position不可改，为absolute)
      * **/
     style: {
+      margin: '10px',
       padding: '10px',
       top: 0,
       left: 0
     },
     itemGap: 10,
+    animation: true, // 翻页是否需要动画
+    animationDurationUpdate: 0.8, // 翻页动画时长，单位s
     /**
      * 图例标记的样式
      * **/
