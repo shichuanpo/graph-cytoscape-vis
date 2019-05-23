@@ -7,10 +7,7 @@ const options = {
      * 图例容器的样式，标准写法 (position不可改，为absolute)
      * **/
     style: {
-      margin: '10px',
-      padding: '10px',
-      top: 0,
-      left: 0
+      padding: '10px'
     },
     itemGap: 10,
     animation: true, // 翻页是否需要动画
