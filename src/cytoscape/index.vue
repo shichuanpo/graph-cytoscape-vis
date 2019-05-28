@@ -306,8 +306,8 @@ export default {
           items[itemsIdx].push(category)
         })
       }
-      if (items.length <= 1) {
-        this.currentPage = 1
+      if (items.length <= this.currentPage) {
+        this.currentPage = items.length
       }
       this.items = items
     },
