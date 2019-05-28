@@ -13,14 +13,13 @@
       a.pageButton.triangle_border_left
       span {{currentPage}} / {{items.length}}
       a.pageButton.triangle_border_right
-  .legend(v-if="legend.show", :style="legend.style", :class="[legend.orient, legend.type]")
+  .legend(v-if="legend.show", :style="legend.style", :class="[legend.orient, legend.type]", onselectstart="return false;")
     .itemsbox(:style="legend.orient === 'vertical' ? {height: legendHeight + 'px'} : {width: legendWidth + 'px'}")
       div(:style='getItemScrollStyle()')
         .items(v-for="(_items, _itemsIdx) in items", :style="{float:itemsFloat, opacity: _itemsIdx === currentPage - 1 || legend.type !== 'scroll' ? 1 : 0.3}", :ref="`items${_itemsIdx}`")
           .item(
             v-for="(_item, _itemIdx) in _items",
             @click="itemChange(getCategoryIndex(_itemsIdx, _itemIdx))",
-            onselectstart="return false;",
             :key="_item+_itemIdx+_itemIdx",
             :style="getItemGapStyle()"
           )
@@ -68,7 +67,7 @@ export default {
       items: [],
       itemsWH: [],
       itemsFloat: 'left',
-      getCheckboxsNextTick: () => { this.$nextTick(this.getCheckboxs) },
+      getLegendLayoutNextTick: () => { this.$nextTick(this.getLegendLayout) },
       currentPage: 1
     };
   },
@@ -196,7 +195,7 @@ export default {
       handler (newCategorys) {
         if (newCategorys) {
           this.checkBoxModel = newCategorys.map(() => true)
-          this.getCheckboxsNextTick()
+          this.getLegendLayoutNextTick()
         }
       },
       deep: true
@@ -215,8 +214,10 @@ export default {
         return result + current.length
       }, 0) + idx2
     },
-    getCheckboxs () {
+    getLegendLayout () {
       if (!this.legend.show) return
+      let ready = this.categorys.every(category => this.$refs[category] && this.$refs[category][0])
+      if (!ready) return
       const {
         paddingTop,
         paddingLeft,
@@ -304,6 +305,9 @@ export default {
           items[itemsIdx] = items[itemsIdx] || []
           items[itemsIdx].push(category)
         })
+      }
+      if (items.length <= 1) {
+        this.currentPage = 1
       }
       this.items = items
     },
@@ -437,11 +441,11 @@ export default {
   },
   mounted () {
     this.createCytoscape()
-    window.addEventListener('resize', this.getCheckboxsNextTick)
+    window.addEventListener('resize', this.getLegendLayoutNextTick)
   },
   beforeDestroy () {
     this.$cy.destroy()
-    window.removeEventListener('resize', this.getCheckboxsNextTick)
+    window.removeEventListener('resize', this.getLegendLayoutNextTick)
   }
 };
 </script>

@@ -78,11 +78,14 @@ options = {
    * 分类配置：
    *      key: 指定获取数据中的某个字段
    *      colors: 分类配色，可以为Array/Object键值对
-   *      images: 分类图片，跟colors用法相同
+   *      images: 分类图片，跟colors用法相同（由于cytoscape原因，支持 data URI 以及 SVG 格式）
    *      data: Array类型，手动分配每一个分类，具体结构如下
    *            [{
    *               name: '分类1',
-   *               matching: data => data.label === '分类1' // 目前只支持函数
+   *               matching: data => data.label === '分类1', // 目前只支持函数
+   *               color, // 支持标准的颜色（"#333333/rgba(0,0,0,0)"），以及函数回调((datas) => { return colors[data[0].label]})
+   *                      // 其中datas为分类集合
+   *               image // 同上
    *            }]
    * **/
   category: {
