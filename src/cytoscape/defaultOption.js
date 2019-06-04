@@ -2,7 +2,7 @@ const options = {
   legend: {
     show: false,
     type: 'scroll', // plain： 普通图例 / scroll： 滚动图例
-    orient: 'horizontal', // horizontal: 横向图例 ／ vertical: 纵向图例
+    orient: 'vertical', // horizontal: 横向图例 ／ vertical: 纵向图例
     /**
      * 图例容器的样式，标准写法 (position不可改，为absolute)
      * **/

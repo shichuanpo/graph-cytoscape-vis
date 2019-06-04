@@ -34,10 +34,20 @@
 </template>
 <script>
 import mockdata from '../mock/data';
-import Cytoscape from './cytoscape'
+import cytoscape from './cytoscape'
+import Cytoscape from 'cytoscape'
+import contextMenus from 'cytoscape-context-menus'
+import $ from 'jquery'
+import popper from 'cytoscape-popper'
+import tippy from 'tippy.js'
+import 'tippy.js/themes/light.css'
+import 'tippy.js/themes/light-border.css'
+import 'tippy.js/themes/google.css'
+import 'tippy.js/themes/translucent.css'
 import { merge, mergeArrayFindSelector, mergeArrayReplace, isObject, isArray, isFunction } from './util'
 import defaultOption from './defaultOption.js'
-
+Cytoscape.use( popper )
+Cytoscape.use(contextMenus, $)
 export default {
   name: 'vue-cytoscape',
   props: {
@@ -57,6 +67,8 @@ export default {
   data () {
     return {
       $cy: null,
+      contextMenus: null,
+      contextMenusItems: [],
       timeStamp: 0,
       checkBoxModel: [],
       filterIds: {},
@@ -67,6 +79,8 @@ export default {
       items: [],
       itemsWH: [],
       itemsFloat: 'left',
+      tooltip: {},
+      events: [],
       getLegendLayoutNextTick: () => { this.$nextTick(this.getLegendLayout) },
       currentPage: 1
     };
@@ -107,7 +121,6 @@ export default {
         style: [{
           selector: 'node',
           style: {
-            'content': 'data(name)',
             'shape': 'barrel',
             'background-color': (ele) => {
               let categoryName = this.dataByCategory(ele.data())
@@ -433,10 +446,68 @@ export default {
     getCytoscape () {
       return this.$cy.cytoscape
     },
+    createTippy (e) {
+      if (!this.$cy || !this.$cy.cytoscape || !this.options.tooltip) {
+        return
+      }
+      let element = e.target
+      if (element !== e.cy) {
+        let content = isFunction(this.options.tooltip.content) ? this.options.tooltip.content(element) : this.options.tooltip.content
+        const { animation, theme } = this.options.tooltip
+        if (this.tooltip[element.id()]) {
+          this.tooltip[element.id()].setContent(content)
+        } else {
+          this.tooltip[element.id()] = tippy(element.popperRef(), { content, animation, theme, trigger: 'manual', interactive: true, hideOnClick: true, sticky: true})
+        }
+        setTimeout(() => {
+          tippy.hideAll()
+          this.tooltip[element.id()].show()
+        }, 0)
+      }
+    },
+    hideTippy(e) {
+      tippy.hideAll()
+    },
+    createContextMenus (e) {
+      if (!this.$cy || !this.$cy.cytoscape || !this.options.contextMenus || !this.options.contextMenus.menuItems) {
+        return
+      }
+      let target = e.target
+      if (this.contextMenus && this.contextMenusItems.length) {
+        this.contextMenusItems.forEach(({id}) => {
+          this.contextMenus.removeMenuItem(id)
+        })
+      }
+      this.contextMenusItems = this.options.contextMenus.menuItems(target)
+      if (this.contextMenus) {
+        this.contextMenus.appendMenuItems(this.contextMenusItems)
+      } else {
+        this.contextMenus = this.$cy.cytoscape.contextMenus({
+          menuItems: this.contextMenusItems
+        })
+      }
+    },
     createCytoscape () {
       this.$cy && this.$cy.destroy()
       let container = this.$refs.cytoscapeContainer
-      this.$cy = new Cytoscape(container, this.data, this.cytoscapeOptions)
+      this.$cy = new cytoscape(container, this.data, this.cytoscapeOptions)
+      this.$cy.cytoscape.on('cxttapstart', this.createContextMenus)
+      this.events.push(() => {
+        this.$cy.cytoscape.off('cxttapstart', this.createContextMenus)
+      })
+      if (this.options.tooltip && this.options.tooltip.trigger && this.options.tooltip.selector) {
+        this.$cy.cytoscape.on(this.options.tooltip.trigger, this.options.tooltip.selector, this.createTippy)
+        this.events.push(() => {
+          this.$cy.cytoscape.off(this.options.tooltip.trigger, this.options.tooltip.selector, this.createTippy)
+        })
+        if (this.options.tooltip.trigger === 'mouseover') {
+          this.$cy.cytoscape.on('mouseout', this.options.tooltip.selector, this.hideTippy)
+          this.events.push(() => {
+            this.$cy.cytoscape.off('mouseout', this.options.tooltip.selector, this.hideTippy)
+          })
+        }
+      }
+      this.$emit('init', this.$cy.cytoscape)
     }
   },
   mounted () {
@@ -444,8 +515,17 @@ export default {
     window.addEventListener('resize', this.getLegendLayoutNextTick)
   },
   beforeDestroy () {
-    this.$cy.destroy()
+    this.$cy && this.$cy.destroy()
     window.removeEventListener('resize', this.getLegendLayoutNextTick)
+    Object.keys(this.tooltip).forEach(key => {
+      this.tooltip[key].destroy(true)
+    })
+    if (this.$cy && this.$cy.cytoscape) {
+      console.log('this.events == ', this.events)
+      this.events.forEach(func => {
+        func()
+      })
+    }
   }
 };
 </script>

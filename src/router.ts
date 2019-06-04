@@ -33,6 +33,14 @@ export default new Router({
           // which is lazy-loaded when the route is visited.
           component: () =>
             import(/* webpackChunkName: "about" */ './views/vis.vue')
+        }, {
+          path: '/g6',
+          name: 'g6',
+          // route level code-splitting
+          // this generates a separate chunk (about.[hash].js) for this route
+          // which is lazy-loaded when the route is visited.
+          component: () =>
+            import(/* webpackChunkName: "about" */ './views/g6.vue')
         }
       ]
     }

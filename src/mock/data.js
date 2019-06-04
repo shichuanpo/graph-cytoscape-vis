@@ -1,4 +1,4 @@
-const group = ['hospital', 'clothes', 'computer', 'person']
+const group = ['hospital', 'clothes', 'computer', 'person', 'flower', 'tree', 'desk', 'house', 'water', 'cup']
 function createId(salt, randomLength = 8) {
   return (
     (salt || '') +
@@ -71,5 +71,5 @@ function createChildren(id, num) {
   let edges = createEdgesFromId(nodes, id)
   return nodes.concat(edges)
 }
-export default createData(30)
-export { createData, createChildren }
+export default createData(50)
+export { createData, createChildren, createNodes, createEdges}

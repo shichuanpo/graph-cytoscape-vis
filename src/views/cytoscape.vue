@@ -1,5 +1,5 @@
 <template lang="pug">
-   cytoscape.cytoscape(ref="cytoscape", :options="options", :data="graphData")
+   cytoscape.cytoscape(ref="cytoscape", :options="options", :data="graphData", @init="cytoscapeInit")
    
 </template>
 <script>
@@ -11,17 +11,18 @@ import computer from '../assets/svg/computer.svg'
 import clothes from '../assets/svg/clothes.svg'
 import Cytoscape from 'cytoscape'
 import fcose from 'cytoscape-fcose'
-import contextMenus from 'cytoscape-context-menus'
-import $ from 'jquery'
+// import contextMenus from 'cytoscape-context-menus'
+// import $ from 'jquery'
 import 'cytoscape-context-menus/cytoscape-context-menus.css'
 Cytoscape.use(fcose)
-Cytoscape.use(contextMenus, $)
+// Cytoscape.use(contextMenus, $)
 export default {
   name: 'cytoscapePage',
   components: { cytoscape },
   data () {
     return {
       $contextMenus: null,
+      contextMenusItems: [],
       options: {
         legend: {
           show: true,
@@ -38,31 +39,67 @@ export default {
             return str
           }
         },
+        contextMenus: {
+          menuItems: target => {
+            if (target.data) {
+              return Object.keys(target.data()).map(key => {
+                return {
+                  id: key,
+                  content: `${key}: ${target.data(key)}`,
+                  selector: 'node, edge',
+                  onClickFunction: function () {
+                    console.log('remove target');
+                  },
+                  disabled: false,
+                  show: true,
+                  hasTrailingDivider: true,
+                  coreAsWell: false
+                }
+              })
+            } else {
+              return []
+            }
+          }
+        },
+        tooltip: {
+          selector: 'node, edge',
+          content: element => {
+            return `${element.id()}`
+          },
+          animation: 'fade',
+          theme: 'light-border',
+          trigger: 'mouseover'
+        },
         category: {
-          key: 'label',
+          key: 'group',
           images: {
             hospital,
             clothes,
             computer,
             person
           },
-        },
-        cytoscape: {
-          layout: {
-            name: 'fcose'
-          }
         }
       },
-      graphData: []
+      graphData: [],
+      $cy: null
     };
   },
   methods: {
+    cytoscapeInit (cytoscape) {
+      this.$cy = cytoscape
+      // this.$contextMenus = this.$cy.contextMenus({
+      //   menuItems: this.contextMenusItems
+      // })
+      // this.$cy.on('cxttapstart', this.createContextMenu)
+    },
     createContextMenu (e) {
       let element = e.target
       if (element.isNode || element.isEdge) {
-        this.$contextMenus && this.$contextMenus.destroy()
-        this.$contextMenus = this.$refs.cytoscape.getCytoscape().contextMenus({
-          menuItems: Object.keys(element.data()).map(key => {
+        if (this.$contextMenus) {
+          this.contextMenusItems.forEach(({id}) => {
+            this.$contextMenus.removeMenuItem(id)
+          })
+          this.contextMenusItems = Object.keys(element.data()).map(key => {
             return {
               id: key, // ID of menu item
               content: `${key}: ${element.data(key)}`, // Display content of menu item
@@ -80,17 +117,17 @@ export default {
               coreAsWell: false // Whether core instance have this item on cxttap
             }
           })
-        })
+          this.$contextMenus.appendMenuItems(this.contextMenusItems)
+        }
       }
     }
   },
   mounted () {
     this.graphData = data
-    this.$refs.cytoscape.getCytoscape().on('mouseover', this.createContextMenu)
   },
   beforeDestroy () {
-    this.$contextMenus && this.$contextMenus.destroy()
-    this.$refs.cytoscape.getCytoscape().off('mouseover', this.createContextMenu)
+    // this.$contextMenus && this.$contextMenus.destroy()
+    // this.$cy && this.$cy.off('cxttapstart', this.createContextMenu)
   }
 };
 </script>

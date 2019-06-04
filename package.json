@@ -10,14 +10,18 @@
     "test:e2e": "vue-cli-service test:e2e"
   },
   "dependencies": {
+    "@antv/g6": "^3.0.4",
     "cytoscape": "^3.5.1",
     "cytoscape-context-menus": "^3.0.6",
     "cytoscape-cxtmenu": "^3.1.0",
     "cytoscape-euler": "^1.2.1",
     "cytoscape-fcose": "^1.0.0",
+    "cytoscape-popper": "^1.0.4",
+    "d3": "^5.9.2",
     "element-ui": "^2.7.0",
     "jquery": "^3.3.1",
     "pug-plain-loader": "^1.0.0",
+    "tippy.js": "^4.3.1",
     "vis": "^4.21.0",
     "vue": "^2.6.6",
     "vue-router": "^3.0.1",

@@ -27,20 +27,20 @@ class Cytoscape {
   _cxttap(e) {
     let element = e.target
     this.elements().unselect()
-    if (element.isNode || element.isEdge) {
+    if (element !== this) {
       this.elements(element).select()
     }
   }
   _click(e) {
     let element = e.target
     this.elements().unselect()
-    if (element.isNode || element.isEdge) {
+    if (element !== this) {
       this.elements(element).select()
     }
   }
   _mouseover(e) {
     let element = e.target
-    if (element.isNode || element.isEdge) {
+    if (element !== this) {
       let targetElement = this.elements(element)
       let neighborhood = targetElement.neighborhood()
       let connectedNodes = targetElement.connectedNodes()
@@ -54,7 +54,7 @@ class Cytoscape {
   }
   _mouseout(e) {
     let element = e.target
-    if (element.isNode || element.isEdge) {
+    if (element !== this) {
       let targetElement = this.elements(element)
       let neighborhood = targetElement.neighborhood()
       let connectedNodes = targetElement.connectedNodes()
