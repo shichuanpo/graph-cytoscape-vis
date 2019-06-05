@@ -450,20 +450,23 @@ export default {
       if (!this.$cy || !this.$cy.cytoscape || !this.options.tooltip) {
         return
       }
-      let element = e.target
-      if (element !== e.cy) {
-        let content = isFunction(this.options.tooltip.content) ? this.options.tooltip.content(element) : this.options.tooltip.content
-        const { animation, theme } = this.options.tooltip
-        if (this.tooltip[element.id()]) {
-          this.tooltip[element.id()].setContent(content)
-        } else {
-          this.tooltip[element.id()] = tippy(element.popperRef(), { content, animation, theme, trigger: 'manual', interactive: true, hideOnClick: true, sticky: true})
+      let content = isFunction(this.options.tooltip.content) ? this.options.tooltip.content(e) : this.options.tooltip.content
+      let tippyOpt = { content }
+      Object.keys(this.options.tooltip).forEach(key => {
+        if (key !== 'content' && key !== 'selector') {
+          tippyOpt[key] = this.options.tooltip[key]
         }
-        setTimeout(() => {
-          tippy.hideAll()
-          this.tooltip[element.id()].show()
-        }, 0)
+      })
+      let element = e.target
+      if (this.tooltip[element.id()]) {
+        this.tooltip[element.id()].setContent(content)
+      } else {
+        this.tooltip[element.id()] = tippy(element.popperRef(), tippyOpt)
       }
+      setTimeout(() => {
+        tippy.hideAll()
+        this.tooltip[element.id()].show()
+      }, 10)
     },
     hideTippy(e) {
       tippy.hideAll()
@@ -472,20 +475,23 @@ export default {
       if (!this.$cy || !this.$cy.cytoscape || !this.options.contextMenus || !this.options.contextMenus.menuItems) {
         return
       }
-      let target = e.target
-      if (this.contextMenus && this.contextMenusItems.length) {
-        this.contextMenusItems.forEach(({id}) => {
-          this.contextMenus.removeMenuItem(id)
-        })
-      }
-      this.contextMenusItems = this.options.contextMenus.menuItems(target)
-      if (this.contextMenus) {
-        this.contextMenus.appendMenuItems(this.contextMenusItems)
-      } else {
-        this.contextMenus = this.$cy.cytoscape.contextMenus({
-          menuItems: this.contextMenusItems
-        })
-      }
+      // 消除菜单的跳跃
+      setTimeout(() => {
+        let target = e.target
+        if (this.contextMenus && this.contextMenusItems.length) {
+          this.contextMenusItems.forEach(({id}) => {
+            this.contextMenus.removeMenuItem(id)
+          })
+        }
+        this.contextMenusItems = this.options.contextMenus.menuItems(e)
+        if (this.contextMenus) {
+          this.contextMenus.appendMenuItems(this.contextMenusItems)
+        } else {
+          this.contextMenus = this.$cy.cytoscape.contextMenus({
+            menuItems: this.contextMenusItems
+          })
+        }
+      }, 100)
     },
     createCytoscape () {
       this.$cy && this.$cy.destroy()
@@ -521,7 +527,6 @@ export default {
       this.tooltip[key].destroy(true)
     })
     if (this.$cy && this.$cy.cytoscape) {
-      console.log('this.events == ', this.events)
       this.events.forEach(func => {
         func()
       })

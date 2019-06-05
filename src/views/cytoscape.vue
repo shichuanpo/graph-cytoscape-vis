@@ -40,11 +40,12 @@ export default {
           }
         },
         contextMenus: {
-          menuItems: target => {
+          menuItems: e => {
+            let target = e.target
             if (target.data) {
               return Object.keys(target.data()).map(key => {
                 return {
-                  id: key,
+                  id: target.data('id') + key,
                   content: `${key}: ${target.data(key)}`,
                   selector: 'node, edge',
                   onClickFunction: function () {
@@ -63,12 +64,17 @@ export default {
         },
         tooltip: {
           selector: 'node, edge',
-          content: element => {
-            return `${element.id()}`
+          trigger: 'mouseover',
+          content: e => {
+            let target = e.target
+            if (target.isEdge()) {
+              return `<div style="text-align: left"><div>名称： ${target.data('name')}</div><div>时间： ${target.data('time')}</div></div>`
+            } else {
+              return `${target.data('label')}`
+            }
           },
           animation: 'fade',
-          theme: 'light-border',
-          trigger: 'mouseover'
+          theme: 'light-border'
         },
         category: {
           key: 'group',

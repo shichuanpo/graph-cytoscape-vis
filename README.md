@@ -105,6 +105,49 @@ options = {
     ]
   },
   /**
+   * 右键配置，封装了cytoscape-context-menus插件，
+   * 其中menuItems回调中参数为cytoscape的事件对象
+   * **/
+  contextMenus: {
+    menuItems: e => {
+      let target = e.target
+      if (target.data) {
+        return Object.keys(target.data()).map(key => {
+          return {
+            id: key,
+            content: `${key}: ${target.data(key)}`,
+            selector: 'node, edge',
+            onClickFunction: function () {
+              console.log('remove target');
+            },
+            disabled: false,
+            show: true,
+            hasTrailingDivider: true,
+            coreAsWell: false
+          }
+        })
+      } else {
+        return []
+      }
+    }
+  },
+  /**
+   * tooltip配置，封装了cytoscape-popper插件，
+   * 其中selector、trigger、content为改造后的参数
+   * selector为需要监听的对象，trigger为事件类型，目前支持 mouseover/click(基于cytoscape)
+   * content回调中参数为cytoscape的事件对象
+   * **/
+  tooltip: {
+    selector: 'node, edge',
+    trigger: 'mouseover',
+    content: e => {
+      let target = e.target
+      return target.data ? `${target.data('label')}` : 'cytoscape'
+    },
+    animation: 'fade',
+    theme: 'light-border'
+  }
+  /**
    * catoscape配置： 完全参照cytoscape配置，详见cytoscape文档: http://js.cytoscape.org/#introduction
    * **/
   cytoscape: {

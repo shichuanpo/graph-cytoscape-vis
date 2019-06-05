@@ -1,4 +1,5 @@
 const group = ['hospital', 'clothes', 'computer', 'person', 'flower', 'tree', 'desk', 'house', 'water', 'cup']
+const year = ['2017', '2018', '2019']
 function createId(salt, randomLength = 8) {
   return (
     (salt || '') +
@@ -34,15 +35,15 @@ function createEdges(nodes, num) {
     ].data.id
     let edge = {
       target,
-      source
+      source,
+      time: year[Math.floor(Math.random() * year.length)] + '-' + Math.ceil(Math.random() * 12) + '-' + Math.ceil(Math.random() * 30)
     }
-    edge.label = edge.group + '-edge' + i
-    edge.name = edge.group + '-edge' + i
+    edge.label = 'edge' + i
+    edge.name = 'edge' + i
     edges.push({
       data: edge,
       group: 'edges',
-      id: edge.id,
-      time: '2019-05-01'
+      id: edge.id
     })
   }
   return edges
