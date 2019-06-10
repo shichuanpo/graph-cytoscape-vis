@@ -92,6 +92,12 @@ const options = {
       '#c4ccd3'
     ]
   },
+  tooltip: {
+    selector: 'node, edge',
+    trigger: 'mouseover',
+    animation: 'fade',
+    theme: 'light-border'
+  },
   /**
    * cytoscape配置： 完全参照cytoscape配置，详见cytoscape文档: http://js.cytoscape.org/#introduction
    * **/

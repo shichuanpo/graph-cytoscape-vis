@@ -13,7 +13,7 @@ import Cytoscape from 'cytoscape'
 import fcose from 'cytoscape-fcose'
 // import contextMenus from 'cytoscape-context-menus'
 // import $ from 'jquery'
-import 'cytoscape-context-menus/cytoscape-context-menus.css'
+// import 'cytoscape-context-menus/cytoscape-context-menus.css'
 Cytoscape.use(fcose)
 // Cytoscape.use(contextMenus, $)
 export default {

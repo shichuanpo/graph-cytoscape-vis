@@ -37,6 +37,7 @@ import mockdata from '../mock/data';
 import cytoscape from './cytoscape'
 import Cytoscape from 'cytoscape'
 import contextMenus from 'cytoscape-context-menus'
+import 'cytoscape-context-menus/cytoscape-context-menus.css'
 import $ from 'jquery'
 import popper from 'cytoscape-popper'
 import tippy from 'tippy.js'
@@ -114,6 +115,10 @@ export default {
     legend () {
       let legend = JSON.parse(JSON.stringify(defaultOption.legend || {}))
       return mergeArrayReplace(legend, this.options.legend || {}) || {}
+    },
+    tooltipOptions () {
+      let tooltipOptions = JSON.parse(JSON.stringify(defaultOption.tooltip || {}))
+      return merge(tooltipOptions, this.options.tooltip || {})
     },
     cytoscapeOptions () {
       let cytoscapeOptions = JSON.parse(JSON.stringify(defaultOption.cytoscape || {}))
@@ -447,14 +452,14 @@ export default {
       return this.$cy.cytoscape
     },
     createTippy (e) {
-      if (!this.$cy || !this.$cy.cytoscape || !this.options.tooltip) {
+      if (!this.$cy || !this.$cy.cytoscape || !this.tooltipOptions.content) {
         return
       }
-      let content = isFunction(this.options.tooltip.content) ? this.options.tooltip.content(e) : this.options.tooltip.content
+      let content = isFunction(this.tooltipOptions.content) ? this.tooltipOptions.content(e) : this.tooltipOptions.content
       let tippyOpt = { content }
-      Object.keys(this.options.tooltip).forEach(key => {
+      Object.keys(this.tooltipOptions).forEach(key => {
         if (key !== 'content' && key !== 'selector') {
-          tippyOpt[key] = this.options.tooltip[key]
+          tippyOpt[key] = this.tooltipOptions[key]
         }
       })
       let element = e.target
@@ -483,7 +488,7 @@ export default {
             this.contextMenus.removeMenuItem(id)
           })
         }
-        this.contextMenusItems = this.options.contextMenus.menuItems(e)
+        this.contextMenusItems = isFunction(this.options.contextMenus.menuItems) ? this.options.contextMenus.menuItems(e) : this.options.contextMenus.menuItems
         if (this.contextMenus) {
           this.contextMenus.appendMenuItems(this.contextMenusItems)
         } else {
@@ -501,15 +506,15 @@ export default {
       this.events.push(() => {
         this.$cy.cytoscape.off('cxttapstart', this.createContextMenus)
       })
-      if (this.options.tooltip && this.options.tooltip.trigger && this.options.tooltip.selector) {
-        this.$cy.cytoscape.on(this.options.tooltip.trigger, this.options.tooltip.selector, this.createTippy)
+      if (this.tooltipOptions && this.tooltipOptions.trigger && this.tooltipOptions.selector) {
+        this.$cy.cytoscape.on(this.tooltipOptions.trigger, this.tooltipOptions.selector, this.createTippy)
         this.events.push(() => {
-          this.$cy.cytoscape.off(this.options.tooltip.trigger, this.options.tooltip.selector, this.createTippy)
+          this.$cy.cytoscape.off(this.tooltipOptions.trigger, this.tooltipOptions.selector, this.createTippy)
         })
-        if (this.options.tooltip.trigger === 'mouseover') {
-          this.$cy.cytoscape.on('mouseout', this.options.tooltip.selector, this.hideTippy)
+        if (this.tooltipOptions.trigger === 'mouseover') {
+          this.$cy.cytoscape.on('mouseout', this.tooltipOptions.selector, this.hideTippy)
           this.events.push(() => {
-            this.$cy.cytoscape.off('mouseout', this.options.tooltip.selector, this.hideTippy)
+            this.$cy.cytoscape.off('mouseout', this.tooltipOptions.selector, this.hideTippy)
           })
         }
       }
