@@ -34,13 +34,13 @@
 </template>
 <script>
 import cytoscape from 'cytoscape'
-import mockdata from '../mock/data';
+// import mockdata from '../mock/data';
 import createCytoscape from './createCytoscape'
 import createEvents from './createEvents'
 import { merge, mergeArrayFindSelector, mergeArrayReplace, isObject, isArray, isFunction } from './util'
 import defaultOption from './defaultOption.js'
 export default {
-  name: 'vue-cytoscape',
+  name: 'gtCytoscape',
   props: {
     options: {
       type: Object,
@@ -51,7 +51,7 @@ export default {
     data: {
       type: Array,
       default: () => {
-        return mockdata
+        return []
       }
     },
     beforeCreate: {
@@ -194,7 +194,7 @@ export default {
       },
       deep: true
     },
-    options: {
+    cytoscapeOptions: {
       handler (newValue) {
         this.$cytoscapeInstance && this.setOptions(newValue)
       },
@@ -208,12 +208,6 @@ export default {
           })
           this.getLegendLayout()
         }
-      },
-      deep: true
-    },
-    beforeCreate: {
-      handler (newFunc) {
-        this.reCompile()
       },
       deep: true
     }
@@ -465,12 +459,33 @@ export default {
      */
     async setData(data) {
       await this.$nextTick()
-      await this.$cytoscapeInstance.resetFilter()
-      this.$cytoscapeInstance.remove(this.$cytoscapeInstance.elements())
-      this.$cytoscapeInstance.add(data)
+      this.$cytoscapeInstance.resetFilter()
+      let _data = data.filter(d => !this.$cytoscapeInstance.$(`#${d.data.id}`).inside())
+      this.$cytoscapeInstance.add(_data)
       let layout = this.$cytoscapeInstance.layout(this.cytoscapeOptions.layout)
       layout.run()
     },
+    // addData (data) {
+    //   // let legendModel = this.$cytoscapeInstance.scratch('legend')
+    //   let _filterData = this.$cytoscapeInstance.scratch('filterData')
+    //   let _data = data
+    //     .filter(d => !this.$cytoscapeInstance.$(`#${d.id}`).inside()) // 当前渲染排除
+    //     .filter(d => !Object.keys(_filterData).find(key => { // 已过滤集合中排除
+    //       return _filterData[key].nodes.find(ele => ele.data('id') === d.id) || _filterData[key].edges.find(ele => ele.data('id') === d.id)
+    //     }))
+    //     /****
+    //      * 添加的数据边的另一头节点在过滤集合当中时
+    //      */
+    //   let __noNodeInsideEdges = []
+    //   Object.keys(_filterData).forEach(key => {
+    //     let _addFilterData = _data.filter(d => _filterData[key].nodes.find(ele => ele.data('id') === d.data.target || ele.data('id') === d.data.source))
+    //     let collection = this.$cytoscapeInstance.collection(_addFilterData)
+    //     _filterData[key].merge(collection)
+    //     __noNodeInsideEdges = __noNodeInsideEdges.concat(_addFilterData)
+    //     this.$cytoscapeInstance.remove(collection)
+    //   })
+    //   this.$cytoscapeInstance.collection()
+    // },
     createCytoscape () {
       this.$cytoscapeInstance && this.$cytoscapeInstance.destroy()
       let container = this.$refs.cytoscapeContainer
