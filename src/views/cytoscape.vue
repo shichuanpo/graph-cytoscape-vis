@@ -1,11 +1,10 @@
 <template lang="pug">
-   cytoscape.cytoscape(ref="cytoscape", :options="options", :data="graphData", @init="cytoscapeInit", @mouseover="createTippy")
-   
+   vue-cytoscape.cytoscape(ref="cytoscape", :category="options.category", :options="options.cytoscape", :data="graphData", @init="cytoscapeInit", @mouseover="createTippy")
+    vue-cytoscape-legend(:category="options.category", :options="options.legend", :data="graphData", @change="legendChange")
 </template>
 <script>
 import data from '../mock/data';
 import { createChildren } from '../mock/data';
-import cytoscape from '../cytoscape/index.vue'
 import hospital from '../assets/svg/hospital.svg'
 import person from '../assets/svg/person.svg'
 import computer from '../assets/svg/computer.svg'
@@ -17,7 +16,6 @@ import 'tippy.js/themes/google.css'
 import 'tippy.js/themes/translucent.css'
 export default {
   name: 'cytoscapePage',
-  components: { cytoscape },
   data () {
     return {
       $contextMenus: null,
@@ -42,7 +40,7 @@ export default {
     layout: {
       name: 'cola',
             animate: true, // whether to show the layout as it's running
-  refresh: 5, // number of ticks per frame; higher is faster but more jerky
+  refresh: 3, // number of ticks per frame; higher is faster but more jerky
   maxSimulationTime: 4000, // max length in ms to run the layout
   ungrabifyWhileSimulating: false, // so you can't drag nodes during layout
   fit: false, // on every layout reposition of nodes, fit the viewport
@@ -80,68 +78,11 @@ export default {
     }},
         contextMenus: {
           menuItems: [{
-            id: 'nextlevel',
-            content: `查询下一级`,
-            selector: 'node',
-            disabled: true,
-            show: true,
-            hasTrailingDivider: true
-          }, {
-            id: 'allidtype',
-            content: `全部ID类型`,
+            id: 'next',
+            content: `查查有几个儿子`,
             selector: 'node',
             onClickFunction: (e) => {
               this.addNode(e)
-            },
-            disabled: false,
-            show: true,
-            hasTrailingDivider: false
-          }, {
-            id: 'mac',
-            content: `只查mac`,
-            selector: 'node',
-            onClickFunction: (e) => {
-              this.addNode(e, { entities: ['mac'] })
-            },
-            disabled: false,
-            show: true,
-            hasTrailingDivider: false
-          }, {
-            id: 'imei',
-            content: `只查imei`,
-            selector: 'node',
-            onClickFunction: (e) => {
-              this.addNode(e, { entities: ['imei'] })
-            },
-            disabled: false,
-            show: true,
-            hasTrailingDivider: false
-          }, {
-            id: 'imsi',
-            content: `只查imsi`,
-            selector: 'node',
-            onClickFunction: (e) => {
-              this.addNode(e, { entities: ['imsi'] })
-            },
-            disabled: false,
-            show: true,
-            hasTrailingDivider: false
-          }, {
-            id: 'pn',
-            content: `只查pn`,
-            selector: 'node',
-            onClickFunction: (e) => {
-              this.addNode(e, { entities: ['pnmd5'] })
-            },
-            disabled: false,
-            show: true,
-            hasTrailingDivider: false
-          }, {
-            id: 'cid',
-            content: `只查cid`,
-            selector: 'node',
-            onClickFunction: (e) => {
-              this.addNode(e, { entities: ['cid'] })
             },
             disabled: false,
             show: true
@@ -182,6 +123,11 @@ export default {
       // setTimeout(() => {
       //   this.$cy.filterByLegend()
       // }, 5000)
+    },
+    legendChange (name, isFilter) {
+      if (this.$cy) {
+        this.$cy.filterByLegend(name, isFilter)
+      }
     },
     addNode (e) {
       let _children = createChildren(e.target.id(), Math.floor(Math.random() * 10 + 5))

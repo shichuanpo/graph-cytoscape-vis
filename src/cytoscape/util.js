@@ -1,13 +1,13 @@
-const isObject = function(item) {
+const isObject = function (item) {
   return Object.prototype.toString.call(item) === '[object Object]'
 }
-const isArray = function(item) {
+const isArray = function (item) {
   return Object.prototype.toString.call(item) === '[object Array]'
 }
-const isFunction = function(item) {
+const isFunction = function (item) {
   return Object.prototype.toString.call(item) === '[object Function]'
 }
-const __merge = function(type = 'merge', target, source) {
+const __merge = function (type = 'merge', target, source) {
   if (isObject(target) && isObject(source)) {
     for (let key in source) {
       if (isObject(source[key]) && isObject(target[key])) {
@@ -20,7 +20,13 @@ const __merge = function(type = 'merge', target, source) {
     }
   } else if (isArray(target) && isArray(source)) {
     if (type === 'merge') {
-      target = Array.from(new Set([...target, ...source])) // 取并集
+      source.forEach((s, idx) => { // 数组根据idx合并
+        if (target[idx] && (isObject(s) || isArray(s))) {
+          target[idx] = __merge(type, target[idx], s)
+        } else {
+          target[idx] = s
+        }
+      })
     } else if (type === 'concat') {
       target = target.concat(source) // 数组合并
     } else if (type === 'findSelector') {
@@ -36,11 +42,12 @@ const __merge = function(type = 'merge', target, source) {
       target = source
     }
   } else {
+    console.log('arguments = ', arguments)
     console.error('target or source must be Object or Array')
   }
   return target
 }
-const _merge = function() {
+const _merge = function () {
   let objs = Array.from(arguments)
   if (objs.length < 2) {
     console.error('target or source cannot be null')
@@ -55,23 +62,23 @@ const _merge = function() {
     console.error('target or source cannot be null')
   }
 }
-const merge = function() {
+const merge = function () {
   let objs = Array.from(arguments)
   return _merge('merge', ...objs)
 }
-const mergeArrayFindSelector = function() {
+const mergeArrayFindSelector = function () {
   let objs = Array.from(arguments)
   return _merge('findSelector', ...objs)
 }
-const mergeArrayConcat = function() {
+const mergeArrayConcat = function () {
   let objs = Array.from(arguments)
   return _merge('concat', ...objs)
 }
-const mergeArrayReplace = function() {
+const mergeArrayReplace = function () {
   let objs = Array.from(arguments)
   return _merge('replace', ...objs)
 }
-const createId = function(salt, randomLength = 8) {
+const createId = function (salt, randomLength = 8) {
   return (
     (salt || '') +
     Number(

@@ -14,9 +14,9 @@ function extend (cy) {
   extendData(cy)
 }
 function extendFunc (cy) {
-  !cy.filterNodesByFunction && cytoscape( 'core', 'filterNodesByFunction', filterNodesByFunction )
-  !cy.filterEdgesByFunction && cytoscape( 'core', 'filterEdgesByFunction', filterEdgesByFunction )
-  !cy.resetFilter && cytoscape( 'core', 'resetFilter', resetFilter )
+  !cy.filterNodesByFunction && cytoscape('core', 'filterNodesByFunction', filterNodesByFunction)
+  !cy.filterEdgesByFunction && cytoscape('core', 'filterEdgesByFunction', filterEdgesByFunction)
+  !cy.resetFilter && cytoscape('core', 'resetFilter', resetFilter)
   // cytoscape( 'collection', 'filterNodesByFunction', filterNodesByFunction )
   // cytoscape( 'collection', 'filterNodesByFunction', filterNodesByFunction )
   // cytoscape( 'collection', 'resetFilter', resetFilter )
@@ -25,7 +25,7 @@ function extendData (cy) {
   cy.scratch('filterData', {})
   cy.scratch('legend', {})
 }
-function _getMergedData(cy, data) {
+function _getMergedData (cy, data) {
   return Object.keys(data).reduce(
     (result, currentValue) => {
       Object.keys(result).forEach(key => {
@@ -39,7 +39,7 @@ function _getMergedData(cy, data) {
     }
   )
 }
-function _getAllNodes(cy) {
+function _getAllNodes (cy) {
   let _filterData = cy.scratch('filterData')
   return (
     cy.nodes().merge(
@@ -49,7 +49,7 @@ function _getAllNodes(cy) {
     )
   )
 }
-function _getAllEdges(cy) {
+function _getAllEdges (cy) {
   let _filterData = cy.scratch('filterData')
   return (
     cy.edges().merge(
@@ -59,7 +59,7 @@ function _getAllEdges(cy) {
     )
   )
 }
-function _canDrawEdge(edge) {
+function _canDrawEdge (edge) {
   return (
     edge.target() &&
     edge.target().inside() &&
@@ -68,10 +68,10 @@ function _canDrawEdge(edge) {
     !edge.inside()
   )
 }
-function _canDrawNode(node) {
+function _canDrawNode (node) {
   return !node.inside()
 }
-function filterNodesByFunction(func) {
+function filterNodesByFunction (func) {
   let allNodes = _getAllNodes(this)
   if (!allNodes) return
   let removeNodes = allNodes.filter(node => !func(node) && node.inside())
@@ -85,7 +85,7 @@ function filterNodesByFunction(func) {
   this.remove(removeNodes)
   return _randomId
 }
-function filterEdgesByFunction(func) {
+function filterEdgesByFunction (func) {
   let allEdges = _getAllEdges(this)
   if (!allEdges) return
   let removeEdges = allEdges.filter(edge => !func(edge) && edge.inside())
@@ -104,7 +104,7 @@ function filterEdgesByFunction(func) {
   this.remove(this.collection().merge(removeNodes).merge(removeEdges))
   return _randomId
 }
-function resetFilter(id) {
+function resetFilter (id) {
   let _filterMergeData = {}
   let _filterData = this.scratch('filterData')
   if (id) {
@@ -118,7 +118,6 @@ function resetFilter(id) {
   this.add(
     _filterMergeData.nodes.filter(node => _canDrawNode(node))
   )
-  
   let _canDrawEdges = _filterMergeData.edges.filter(edge => _canDrawEdge(edge))
   // 把画不出来的线归到其他的集合里面。因为线有两个属性（source， target）
   let _cannotDrawEdges = _filterMergeData.edges.difference(_canDrawEdges)
@@ -138,5 +137,6 @@ function resetFilter(id) {
     _filterData = {}
   }
   this.scratch('filterData', _filterData)
+  return null
 }
 export default createCytoscape

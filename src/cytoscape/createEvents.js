@@ -6,7 +6,7 @@ const handlers = {
       this.elements(element).select()
     }
   },
-  _click: function(e) {
+  _click: function (e) {
     let element = e.target
     this.elements().unselect()
     if (element !== this) {
@@ -44,7 +44,7 @@ const handlers = {
 }
 function createEvents (cy) {
   let selector = ''
-  let events =[]
+  let events = []
   ;['select', 'unselect', 'click', 'cxttap'].forEach(item => {
     selector
       ? cy.on(item, selector, handlers[`_${item}`])
