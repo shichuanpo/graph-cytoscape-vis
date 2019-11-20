@@ -19,7 +19,7 @@ const legendOption = {
   tagStyle: {
     display: 'inline-block',
     verticalAlign: 'middle',
-    border: '1px transparent solid',
+    borderWidth: '1px',
     height: '14px',
     lineHeight: '10px',
     padding: '1px',
@@ -37,8 +37,7 @@ const legendOption = {
    * 图例标记未选中的样式
    * **/
   inactiveTagStyle: {
-    backgroundColor: '#ccc',
-    borderColor: 'transparent'
+    backgroundColor: '#ccc'
   },
   /**
    * 图例文字的样式
@@ -46,7 +45,6 @@ const legendOption = {
   textStyle: {
     display: 'inline-block',
     verticalAlign: 'middle',
-    border: '1px transparent solid',
     height: '14px',
     lineHeight: '10px',
     padding: '1px',

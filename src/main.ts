@@ -2,7 +2,7 @@ import Vue from 'vue'
 import App from './App.vue'
 import router from './router'
 import store from './store'
-import cytoscape from '@/cytoscape'
+import vueCytoscape from '@/vueCytoscape'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import cola from 'cytoscape-cola'
@@ -17,7 +17,7 @@ import popper from 'cytoscape-popper'
 // import klay from 'cytoscape-klay'
 // import navigator from 'cytoscape-navigator'
 Vue.config.productionTip = false
-Vue.use(cytoscape, {
+Vue.use(vueCytoscape, {
   beforeCreate: (Cytoscape: any) => {
     // Cytoscape.use(fcose)
     // Cytoscape.use(coseBilkent)

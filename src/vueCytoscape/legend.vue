@@ -35,7 +35,7 @@
 import { merge, mergeArrayReplace, isObject, isArray, isFunction, colorRgba } from './util'
 import { categoryOption, legendOption } from './defaultOption.js'
 export default {
-  name: 'cytoscape-legend',
+  name: 'vueCytoscapeLegend',
   props: {
     category: {
       type: Object,
@@ -143,8 +143,7 @@ export default {
     inactiveTagStyle () {
       let _inactiveTagStyle = {}
       Object.keys(this.styleByCategory).forEach(category => {
-        let borderStyle = this.styleByCategory[category].borderStyle
-        _inactiveTagStyle[category] = Object.assign({}, this.legend.tagStyle, borderStyle ? {borderStyle} : {}, this.legend.inactiveTagStyle)
+        _inactiveTagStyle[category] = Object.assign({}, this.legend.tagStyle, this.legend.inactiveTagStyle)
       })
       return _inactiveTagStyle
     },

@@ -1,14 +1,12 @@
 <template lang="pug">
-  cytoscape.cytoscape(ref="cytoscape", :options="options.cytoscape", :category="options.category", :data="graphData", @init="cytoscapeInit", @mouseover="createTippy")
-    cylegend(:data="graphData", v-model="legendNodeModel", :options="options.nodeLegend", :category="options.category.nodes")
-    cylegend(:data="graphData", v-model="legendEdgeModel", type="edges", :options="options.edgeLegend", :category="options.category.edges")
+  vue-cytoscape.cytoscape(ref="cytoscape", :options="options.cytoscape", :category="options.category", :data="graphData", @init="cytoscapeInit", @mouseover="createTippy")
+    vue-cytoscape-legend(:data="graphData", v-model="legendNodeModel", :options="options.nodeLegend", :category="options.category.nodes")
+    vue-cytoscape-legend(:data="graphData", v-model="legendEdgeModel", type="edges", :options="options.edgeLegend", :category="options.category.edges")
     //- .navigator
 </template>
 <script>
 import data from '../mock/data';
 import { createChildren } from '../mock/data';
-import cytoscape from '../cytoscape/cytoscape.vue'
-import cylegend from '../cytoscape/legend.vue'
 import hospital from '../assets/svg/hospital.svg'
 import person from '../assets/svg/person.svg'
 import computer from '../assets/svg/computer.svg'
@@ -20,7 +18,6 @@ import 'tippy.js/themes/google.css'
 import 'tippy.js/themes/translucent.css'
 export default {
   name: 'cytoscapePage',
-  components: { cytoscape, cylegend },
   data () {
     return {
       tooltip: {},
@@ -43,7 +40,7 @@ export default {
             padding: '10px',
             top: 0,
             left: 0
-          },
+          }
         },
         edgeLegend: {
           show: true,
@@ -53,15 +50,16 @@ export default {
             right: 0
           },
           tagStyle: {
+            borderRadius: 0,
             borderWidth: 0,
-            borderTopWidth: '2px',
+            borderTop: '2px solid',
             height: '0px',
             'line-height': '10px',
             // padding: '1px',
             // width: '25px',
           },
           inactiveTagStyle: {
-            borderColor: '#ccc',
+            borderTop: '2px #ccc dashed',
             background: 'none'
           },
           formatter: str => {

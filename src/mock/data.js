@@ -77,5 +77,5 @@ function createChildren(id, num) {
   let edges = createEdgesFromId(nodes, id)
   return nodes.concat(edges)
 }
-export default createData(300)
+export default createData(30)
 export { createData, createChildren, createNodes, createEdges}
