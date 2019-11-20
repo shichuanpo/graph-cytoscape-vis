@@ -3,7 +3,7 @@
   .legend.legendCalc(v-if="legend.show", :style="legend.style", :class="[legend.orient, legend.type]", ref="legend")
     .item(
       v-for="(categoryName, index) in categorys",
-      :style="getItemGapStyle()",
+      :style="getItemStyle()",
       :key="categoryName",
       :ref="categoryName"
     )
@@ -16,26 +16,26 @@
   .legend(v-if="legend.show", :style="legend.style", :class="[legend.orient, legend.type]", onselectstart="return false;")
     .itemsbox(:style="legend.orient === 'vertical' ? {height: legendHeight + 'px'} : {width: legendWidth + 'px'}")
       div(:style='getItemScrollStyle()')
-        .items(v-for="(_items, _itemsIdx) in items", :style="{float:itemsFloat}", :ref="`items${_itemsIdx}`")
+        .items(v-for="(_items, _itemsIdx) in items", :key="_itemsIdx", :style="{float:itemsFloat}", :ref="`items${_itemsIdx}`")
           .item(
             v-for="(_item, _itemIdx) in _items",
             @click="itemChange(_item)",
-            :key="_item+_itemIdx+_itemIdx",
-            :style="getItemGapStyle()"
+            :key="_item+_itemsIdx+_itemIdx",
+            :style="getItemStyle()"
           )
-            span.tag(:style="getTagStyle(_item)")
-              img(:src="imgByCategory[_item]", height="100%", v-if="!legendModel[_item]")
-            span.text(:style="getTextStyle(_item)", :title="legend.formatter ? legend.formatter(_item) : _item") {{legend.formatter ? legend.formatter(_item) : _item}}
+            span.tag(:style="legendModel[_item] ? inactiveTagStyle[_item] : activeTagStyle[_item]")
+              //- img(v-if="imgByCategory[_item]", :src="imgByCategory[_item] || defaultImage", height="100%")
+            span.text(:style="legendModel[_item] ? inactiveTextStyle[_item] : activeTextStyle[_item]", :title="legend.formatter ? legend.formatter(_item) : _item") {{legend.formatter ? legend.formatter(_item) : _item}}
     .pagination(v-if="items.length > 1 && legend.type === 'scroll'")
       a.pageButton.triangle_border_left(@click="pageChange('sub')", :class="{'disabled': currentPage <= 1}")
       span {{currentPage}} / {{items.length}}
       a.pageButton.triangle_border_right(@click="pageChange('add')", :class="{'disabled': currentPage >= items.length}")
 </template>
 <script>
-import { merge, mergeArrayReplace, isObject, isArray, isFunction } from './util'
+import { merge, mergeArrayReplace, isObject, isArray, isFunction, colorRgba } from './util'
 import { categoryOption, legendOption } from './defaultOption.js'
 export default {
-  name: 'vueCytoscapeLegend',
+  name: 'cytoscape-legend',
   props: {
     category: {
       type: Object,
@@ -54,14 +54,24 @@ export default {
       default: () => {
         return []
       }
+    },
+    type: {
+      type: String,
+      default: 'nodes'
+    },
+    model: {
+      type: Object
     }
+  },
+  model: {
+    prop: 'model',
+    event: 'change'
   },
   data () {
     return {
-      legendModel: {},
       timeStamp: 0,
-      defaultColor: '#ccc',
-      defaultImage: '#ccc',
+      defaultColor: '#ddd',
+      defaultImage: '#ddd',
       legendWidth: 0,
       legendHeight: 0,
       items: [],
@@ -71,83 +81,100 @@ export default {
     }
   },
   computed: {
-    colors () {
-      if (this.category && this.category.colors) {
-        let colors = this.category.colors
-        if (isArray(colors)) {
-          return merge([], categoryOption.colors, colors || [])
-        } else if (isObject(colors)) {
-          return colors
-        }
+    legendModel: {
+      get () {
+        return merge({}, this.model)
+      },
+      set (value) {
+        this.$emit('change', value)
       }
-      return categoryOption.colors || {}
     },
-    images () {
-      if (this.category && this.category.images) {
-        let images = this.category.images
-        if (isArray(images)) {
-          return merge([], categoryOption.images, images || [])
-        } else if (isObject(images)) {
-          return images
+    /****
+     * 
+     */
+    styles () {
+      let _defaultOption = categoryOption[this.type].styles
+      if (this.category && this.category && this.category.styles) {
+        let _styles = this.category.styles
+        if (isArray(_styles) && isArray(_defaultOption)) {
+          return merge([], _defaultOption, _styles || [])
+        } else if (isObject(_styles) && isObject(_defaultOption)) {
+          return merge({}, _defaultOption, _styles || {})
+        } else if (isObject(_styles) && isArray(_defaultOption)) {
+          let _newStyles = {}
+          this.categorys.forEach((key, idx) => {
+            let _idx = idx % _defaultOption.length
+            _newStyles[key] = merge({}, _defaultOption[_idx], _styles[key] || {})
+          })
+          return _newStyles
         }
       }
-      return categoryOption.images || {}
+      return _defaultOption || {}
+    },
+    styleByCategory () {
+      let _styleCategory = {}
+      if (isArray(this.styles)) {
+        this.categorys.forEach((g, idx) => {
+          idx = idx % this.styles.length
+          _styleCategory[g] = this.styles[idx]
+        })
+      } else if (isObject(this.styles)) {
+        _styleCategory = this.styles
+      }
+      if (isArray(this.categoryBy)) {
+        this.categoryBy.forEach(({ style, name, matching }) => {
+          let _style = style
+          if (isFunction(style)) {
+            let datas = this.data.filter(d => d.group === this.type).map(d => d.data).filter(d => matching && matching(d))
+            _style = style(datas)
+          }
+          _styleCategory[name] = _style || _styleCategory[name]
+        })
+      }
+      return this.getTransStyle(_styleCategory)
+    },
+    activeTagStyle () {
+      let _activeTagStyle = {}
+      Object.keys(this.styleByCategory).forEach(category => {
+        _activeTagStyle[category] = Object.assign({}, this.legend.tagStyle, this.styleByCategory[category], this.legend.activeTagStyle)
+      })
+      return _activeTagStyle
+    },
+    inactiveTagStyle () {
+      let _inactiveTagStyle = {}
+      Object.keys(this.styleByCategory).forEach(category => {
+        let borderStyle = this.styleByCategory[category].borderStyle
+        _inactiveTagStyle[category] = Object.assign({}, this.legend.tagStyle, borderStyle ? {borderStyle} : {}, this.legend.inactiveTagStyle)
+      })
+      return _inactiveTagStyle
+    },
+    activeTextStyle () {
+      let _activeTextStyle = {}
+      Object.keys(this.styleByCategory).forEach(category => {
+        _activeTextStyle[category] = Object.assign({}, this.legend.textStyle, {
+          color: this.styleByCategory[category]['borderColor'] || this.styleByCategory[category]['backgroundColor']
+        }, this.legend.activeTextStyle)
+      })
+      return _activeTextStyle
+    },
+    inactiveTextStyle () {
+      let _inactiveTextStyle = {}
+      Object.keys(this.styleByCategory).forEach(category => {
+        _inactiveTextStyle[category] = Object.assign({}, this.legend.textStyle, this.legend.inactiveTextStyle)
+      })
+      return _inactiveTextStyle
+    },
+    categorys () {
+      let _categorys = Array.from(
+        new Set((this.data || []).filter(dat => dat.group === this.type).map(dat => this.dataByCategory(dat.data)).filter(g => !!g))
+      )
+      return _categorys
     },
     categoryBy () {
       return this.category && (this.category.data || this.category.key) || categoryOption.key
     },
     legend () {
       return mergeArrayReplace({}, legendOption || {}, this.options || {}) || {}
-    },
-    categorys () {
-      let _categorys = Array.from(
-        new Set((this.data || []).filter(dat => dat.group === 'nodes').map(dat => this.dataByCategory(dat.data)).filter(g => !!g))
-      )
-      return _categorys
-    },
-    colorByCategory () {
-      let colorCategory = {}
-      if (isArray(this.colors)) {
-        this.categorys.forEach((g, idx) => {
-          idx = idx % this.colors.length
-          colorCategory[g] = this.colors[idx]
-        })
-      } else if (isObject(this.colors)) {
-        colorCategory = this.colors
-      }
-      if (isArray(this.categoryBy)) {
-        this.categoryBy.forEach(({ color, name, matching }) => {
-          let _color = color
-          if (isFunction(color)) {
-            let datas = this.data.map(d => d.data).filter(d => matching && matching(d))
-            _color = color(datas)
-          }
-          colorCategory[name] = _color || colorCategory[name] || this.defaultColor
-        })
-      }
-      return colorCategory
-    },
-    imgByCategory () {
-      let imgCategory = {}
-      if (isArray(this.images)) {
-        this.categorys.forEach((g, idx) => {
-          idx = idx % this.images.length
-          imgCategory[g] = this.images[idx]
-        })
-      } else if (isObject(this.images)) {
-        imgCategory = this.images
-      }
-      if (isArray(this.categoryBy)) {
-        this.categoryBy.forEach(({ image, name, matching }) => {
-          let _image = image
-          if (isFunction(image)) {
-            let datas = this.data.map(d => d.data).filter(d => matching && matching(d))
-            _image = image(datas)
-          }
-          imgCategory[name] = _image || imgCategory[name] || this.defaultImage
-        })
-      }
-      return imgCategory
     }
   },
   watch: {
@@ -155,8 +182,8 @@ export default {
       handler (newCategorys) {
         if (newCategorys) {
           this.getLegendLayout()
-          Object.keys(this.legendModel).forEach(key => {
-            this.legendModel[key] = null
+          newCategorys.forEach(key => {
+            this.legendModel[key] = !!this.legendModel[key]
           })
         }
       },
@@ -176,9 +203,12 @@ export default {
         return result + current.length
       }, 0) + idx2
     },
+    /****
+     * 布局计算
+     */
     async getLegendLayout () {
-      if (!this.legend.show || this.$el.clientWidth <= 0 || this.$el.clientHeight <= 0) return
       await this.$nextTick()
+      if (!this.legend.show || !this.$refs.legend || this.$el.clientWidth <= 0 || this.$el.clientHeight <= 0) return
       const {
         paddingTop,
         paddingLeft,
@@ -272,20 +302,25 @@ export default {
       }
       this.items = items
     },
-    getTagStyle (categoryName) {
-      let legendModel = this.legendModel[categoryName]
-      let defaultStyle = Object.assign({}, this.legend.tagStyle, {
-        'background': this.colorByCategory[categoryName],
-        border: `1px solid ${this.colorByCategory[categoryName]}`
+    /****
+     * 目前支持的样式有：背景颜色（透明度），背景图片，边框颜色，边框类型等
+     * todo：shape、渐变等
+     */
+    getTransStyle (style) {
+      let _tranStyle = {}
+      Object.keys(style).forEach(key => {
+        let __tranStyle = {
+          'backgroundColor': style[key]['background-color'] ? colorRgba(style[key]['background-color'], style[key]['background-opacity'] || 1) : 'none',
+          'backgroundImage': style[key]['background-image'] ? `url(${style[key]['background-image']})` : 'none',
+          'backgroundPosition': 'center',
+          'backgroundRepeat': style[key]['background-repeat'],
+          'backgroundSize': `${style[key]['background-width']} ${style[key]['background-height']}`,
+          'borderColor': `${style[key]['border-color'] || style[key]['line-color']}`,
+          'borderStyle': `${style[key]['border-style'] || style[key]['line-style']}`
+        }
+        _tranStyle[key] = __tranStyle
       })
-      return Object.assign(defaultStyle, legendModel ? this.legend.inactiveTagStyle : this.legend.activeTagStyle)
-    },
-    getTextStyle (categoryName) {
-      let legendModel = this.legendModel[categoryName]
-      let defaultStyle = Object.assign({}, this.legend.textStyle, {
-        'color': this.colorByCategory[categoryName]
-      })
-      return Object.assign(defaultStyle, legendModel ? this.legend.inactiveTextStyle : this.legend.activeTextStyle)
+      return _tranStyle
     },
     getItemScrollStyle () {
       let style = {}
@@ -311,7 +346,7 @@ export default {
       }
       return style
     },
-    getItemGapStyle () {
+    getItemStyle () {
       let styleText = `${this.legend.itemGap || 0}px`
       if (this.legend.type === 'scroll') {
         if (this.legend.orient === 'horizontal') {
@@ -326,7 +361,8 @@ export default {
       }
       return {
         'margin-right': styleText,
-        'margin-bottom': styleText
+        'margin-bottom': styleText,
+        'cursor': this.legend.disabled ? 'default' : 'pointer'
       }
     },
     dataByCategory (data) {
@@ -338,6 +374,7 @@ export default {
       }
     },
     itemChange (categoryName) {
+      if (this.legend.disabled) return
       let ntime = new Date().getTime()
       if (ntime - this.timeStamp < 200) {
         clearTimeout(this.timeout)
@@ -351,34 +388,18 @@ export default {
       }
     },
     itemClick (categoryName) {
-      if (this.legendModel[categoryName]) {
-        this.$set(this.legendModel, categoryName, null)
-      } else {
-        this.$set(this.legendModel, categoryName, true)
-      }
-      this.$emit('change', categoryName, this.legendModel[categoryName])
+      this.legendModel[categoryName] = !this.legendModel[categoryName]
+      this.legendModel = this.legendModel // setter触发
     },
     itemDblClick (categoryName) {
-      let isChecked = !this.legendModel[categoryName]
-      this.categorys.forEach(_categoryName => {
-        if (_categoryName === categoryName) {
-          if (isChecked) {
-            this.$set(this.legendModel, _categoryName, true)
-          } else {
-            this.$set(this.legendModel, _categoryName, null)
-          }
-        } else {
-          if (isChecked && this.legendModel[_categoryName]) {
-            this.$set(this.legendModel, _categoryName, null)
-          } else if (!isChecked && !this.legendModel[_categoryName]) {
-            this.$set(this.legendModel, _categoryName, true)
-          }
-        }
-        this.$emit('change', _categoryName, this.legendModel[_categoryName])
+      Object.keys(this.legendModel).forEach(_categoryName => {
+        this.legendModel[_categoryName] = _categoryName !== categoryName
       })
+      this.legendModel = this.legendModel // setter触发
     }
   },
   mounted () {
+    this.getLegendLayout()
     window.addEventListener('resize', this.getLegendLayout)
   },
   beforeDestroy () {
@@ -389,7 +410,7 @@ export default {
 <style lang="less" scoped>
 .cytoscape__legend {
   text-align: left;
-  position: relative;
+  position: absolute;
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -441,7 +462,6 @@ export default {
   }
   .item {
     overflow: hidden;
-    cursor: pointer;
     white-space: nowrap;
     font-size: 0;
     input {

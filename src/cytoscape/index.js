@@ -1,12 +1,10 @@
 
-import vueCytoscape from './cytoscape.vue'
-import vueCytoscapeLegend from './legend.vue'
+import VueCytoscape from './cytoscape.vue'
 import cytoscape from 'cytoscape'
 
 export default {
   install (Vue, options) {
-    Vue.component(vueCytoscape.name, vueCytoscape)
-    Vue.component(vueCytoscapeLegend.name, vueCytoscapeLegend)
+    Vue.component(VueCytoscape.name, VueCytoscape)
     options.beforeCreate && options.beforeCreate(cytoscape)
   }
 }

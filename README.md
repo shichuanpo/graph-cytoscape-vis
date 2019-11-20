@@ -75,78 +75,48 @@ options = {
     formatter: string => string // 格式转换，翻译
   },
   /**
-   * 分类配置：
+   * 分类配置：实体分类和边分类
+   * nodes:
+   * edges:
    *      key: 指定获取数据中的某个字段
-   *      colors: 分类配色，可以为Array/Object键值对
-   *      images: 分类图片，跟colors用法相同（由于cytoscape原因，支持 data URI 以及 SVG 格式）
+   *      styles: 分类配色，可以为Array/Object键值对,如下
+   *      {
+            category1: {
+              'background-color': '#ccc' // 与cytoscape样式一致
+            }
+          }
+          或者
+          [{'background-color': '#fff'}]
+
    *      data: Array类型，手动分配每一个分类，具体结构如下
    *            [{
    *               name: '分类1',
    *               matching: data => data.label === '分类1', // 目前只支持函数
-   *               color, // 支持标准的颜色（"#333333/rgba(0,0,0,0)"），以及函数回调((datas) => { return colors[data[0].label]})
+   *               style, // 支持 cytoscape样式，以及函数回调((datas) => datas[0].style)
    *                      // 其中datas为分类集合
-   *               image // 同上
    *            }]
    * **/
   category: {
-    key: 'category',
-    colors: [
-      '#c23531',
-      '#2f4554',
-      '#61a0a8',
-      '#d48265',
-      '#91c7ae',
-      '#749f83',
-      '#ca8622',
-      '#bda29a',
-      '#6e7074',
-      '#546570',
-      '#c4ccd3'
-    ]
-  },
-  /**
-   * 右键配置，封装了cytoscape-context-menus插件，
-   * 其中menuItems回调中参数为cytoscape的事件对象
-   * **/
-  contextMenus: {
-    menuItems: e => {
-      let target = e.target
-      if (target.data) {
-        return Object.keys(target.data()).map(key => {
-          return {
-            id: key,
-            content: `${key}: ${target.data(key)}`,
-            selector: 'node, edge',
-            onClickFunction: function () {
-              console.log('remove target');
-            },
-            disabled: false,
-            show: true,
-            hasTrailingDivider: true,
-            coreAsWell: false
-          }
-        })
-      } else {
-        return []
+    nodes: {
+      key: 'category',
+      styles: [{
+        'background-color': '#c23531'
+      }, {
+        'background-color': '#2f4554'
+      }]
+    },
+    edges: {
+      key: 'category',
+      styles: {
+        category1: {
+          'background-color': '#c23531'
+        },
+        category1: {
+          'background-color': '#2f4554'
+        }
       }
     }
   },
-  /**
-   * tooltip配置，封装了cytoscape-popper插件，
-   * 其中selector、trigger、content为改造后的参数
-   * selector为需要监听的对象，trigger为事件类型，目前支持 mouseover/click(基于cytoscape)
-   * content回调中参数为cytoscape的事件对象
-   * **/
-  tooltip: {
-    selector: 'node, edge',
-    trigger: 'mouseover',
-    content: e => {
-      let target = e.target
-      return target.data ? `${target.data('label')}` : 'cytoscape'
-    },
-    animation: 'fade',
-    theme: 'light-border'
-  }
   /**
    * catoscape配置： 完全参照cytoscape配置，详见cytoscape文档: http://js.cytoscape.org/#introduction
    * **/

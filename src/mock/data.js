@@ -1,4 +1,5 @@
 const group = ['hospital', 'clothes', 'computer', 'person', 'flower', 'tree', 'desk', 'house', 'water', 'cup']
+const edgegroup = ['has', 'goto', 'love']
 const year = ['2017', '2018', '2019']
 function createId(salt, randomLength = 8) {
   return (
@@ -36,6 +37,8 @@ function createEdges(nodes, num) {
     let edge = {
       target,
       source,
+      id: createId(),
+      group: edgegroup[Math.floor(Math.random() * edgegroup.length)],
       time: year[Math.floor(Math.random() * year.length)] + '-' + Math.ceil(Math.random() * 12) + '-' + Math.ceil(Math.random() * 30)
     }
     edge.label = 'edge' + i
@@ -55,6 +58,8 @@ function createEdgesFromId(nodes, id) {
       data: {
         target: node.data.id,
         source: id,
+        id: createId(),
+        group: edgegroup[Math.floor(Math.random() * edgegroup.length)],
         label: node.data.id + '-' + id,
         name: node.data.id + '-' + id
       }
@@ -72,5 +77,5 @@ function createChildren(id, num) {
   let edges = createEdgesFromId(nodes, id)
   return nodes.concat(edges)
 }
-export default createData(15)
+export default createData(300)
 export { createData, createChildren, createNodes, createEdges}

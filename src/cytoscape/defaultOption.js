@@ -1,3 +1,4 @@
+import {merge} from './util'
 const legendOption = {
   show: false,
   type: 'scroll', // plain： 普通图例 / scroll： 滚动图例
@@ -6,6 +7,7 @@ const legendOption = {
    * 图例容器的样式，标准写法 (position不可改，为absolute)
    * **/
   style: {
+    cursor: 'pointer',
     padding: '10px'
   },
   itemGap: 10,
@@ -16,16 +18,16 @@ const legendOption = {
    * **/
   tagStyle: {
     display: 'inline-block',
-    'vertical-align': 'top',
+    verticalAlign: 'middle',
     border: '1px transparent solid',
     height: '14px',
-    'line-height': '10px',
+    lineHeight: '10px',
     padding: '1px',
-    'box-sizing': 'border-box',
+    boxSizing: 'border-box',
     width: '25px',
-    'border-radius': '3px',
-    'margin-right': '1px',
-    'text-align': 'center'
+    borderRadius: '3px',
+    marginRight: '1px',
+    textAlign: 'center'
   },
   /**
    * 图例标记选中的样式，为空的时候自动根据分类配置的颜色
@@ -35,21 +37,21 @@ const legendOption = {
    * 图例标记未选中的样式
    * **/
   inactiveTagStyle: {
-    background: '#ccc',
-    border: '1px transparent solid'
+    backgroundColor: '#ccc',
+    borderColor: 'transparent'
   },
   /**
    * 图例文字的样式
    * **/
   textStyle: {
     display: 'inline-block',
-    'vertical-align': 'top',
+    verticalAlign: 'middle',
     border: '1px transparent solid',
     height: '14px',
-    'line-height': '10px',
+    lineHeight: '10px',
     padding: '1px',
-    'box-sizing': 'border-box',
-    'font-size': '12px',
+    boxSizing: 'border-box',
+    fontSize: '12px',
     color: '#333'
   },
   /**
@@ -64,21 +66,60 @@ const legendOption = {
   },
   formatter: string => string // 格式转换，翻译
 }
+
+/****
+ * 支持的基础node样式(cytoscape不支持驼峰)
+ */
+const nodesBaseStyle = {
+  'shape': 'round-rectangle',
+  'background-color': '#ccc',
+  'background-opacity': 0.8,
+  'border-width': 1,
+  'border-style': 'solid', // 节点边框的样式；可以是solid，dotted，dashed，或double。
+  'border-color': '#ccc',
+  'border-opacity': 1,
+  'background-image': 'none',
+  'background-width': '80%',
+  'background-height': '80%',
+  'background-repeat': 'no-repeat',
+  'z-index-compare': 'manual',
+  'z-index': 2
+}
+/****
+ * 支持的基础edge样式(cytoscape不支持驼峰)
+ */
+const edgesBaseStyle = {
+  'line-style': 'solid',
+  'line-color': '#ccc',
+  'width': 1
+}
+const baseColor = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3']
+/**
+ * 分类配置：
+ *      key: 指定获取数据中的某个字段
+ *      colors: 分类配色，可以为Array/Object键值对
+ *      images: 分类图片，跟colors用法相同（由于cytoscape原因，支持 data URI 以及 SVG 格式）
+ *      data: Array类型，手动分配每一个分类，具体结构如下
+ *            [{
+ *               name: '分类1',
+ *               matching: data => data.label === '分类1', // 目前只支持函数
+ *               color, // 支持标准的颜色（"#333333/rgba(0,0,0,0)"），以及函数回调((datas) => { return colors[data[0].label]})
+ *                      // 其中datas为分类集合
+ *               image // 同上
+ *            }]
+ * **/
 const categoryOption = {
-  key: 'category',
-  colors: [
-    '#c23531',
-    '#2f4554',
-    '#61a0a8',
-    '#d48265',
-    '#91c7ae',
-    '#749f83',
-    '#ca8622',
-    '#bda29a',
-    '#6e7074',
-    '#546570',
-    '#c4ccd3'
-  ]
+  nodes: {
+    key: 'category',
+    styles: baseColor.map(color => merge({}, nodesBaseStyle, {
+      'background-color': color,
+      'border-color': color,
+    }))
+  },
+  edges: {
+    key: 'category',
+    styles: [edgesBaseStyle]
+  }
 }
   /**
    * cytoscape配置： 完全参照cytoscape配置，详见cytoscape文档: http://js.cytoscape.org/#introduction
@@ -97,20 +138,20 @@ const cytoscapeOption = {
       }
     },
     {
-      selector: 'node:selected',
-      style: {
-        'border-color': 'rgb(5, 161, 140)',
-        'border-width': 2
-      }
-    },
-    {
       selector: 'node',
       style: {
         'background-color': 'rgb(5, 161, 140)',
-        'background-opacity': 0.6,
-        'background-image-opacity': 0.6,
+        'background-opacity': 0.8,
+        'background-image-opacity': 0.8,
         'z-index-compare': 'manual',
+        'border-width': 1,
         'z-index': 2
+      }
+    },
+    {
+      selector: 'node:selected',
+      style: {
+        'border-width': 1
       }
     },
     {
@@ -128,21 +169,19 @@ const cytoscapeOption = {
         width: 1,
         'curve-style': 'bezier',
         'target-arrow-shape': 'vee',
-        'target-arrow-color': '#dddddd',
-        'line-color': '#dddddd',
+        'target-arrow-color': '#d1dbda',
+        'line-color': '#d1dbda',
+        'opacity': 0.8,
         'z-index': 1
       }
     },
     {
       selector: 'edge[label]',
-      style: { 'font-size': '9px', color: '#666', 'z-index': 1 }
+      style: { 'font-size': '9px', color: '#626867', 'z-index': 1 }
     },
     {
       selector: '.hover',
       style: {
-        'target-arrow-color': '#aaa',
-        'line-color': '#aaa',
-        color: '#333',
         'background-opacity': 1,
         'background-image-opacity': 1,
         'z-index': 99
@@ -158,25 +197,26 @@ const cytoscapeOption = {
     {
       selector: '.unhover',
       style: {
-        'target-arrow-color': '#eee',
-        'line-color': '#eee',
-        color: '#eee',
-        'background-opacity': 0.3,
-        'background-image-opacity': 0.3,
+        'opacity': 0.3
         // 'z-index': 0
       }
     },
     {
       selector: 'edge.unhover',
       style: {
-        width: 1
+        width: 1,
+        'opacity': 0.3
+      }
+    },
+    {
+      selector: '.hide',
+      style: {
+        display: 'none'
       }
     }
   ],
   minZoom: 0.5,
   maxZoom: 10
-  // userPanningEnabled: false,
-  // boxSelectionEnabled: true
 }
 export default {
   legendOption,
@@ -184,6 +224,9 @@ export default {
   cytoscapeOption
 }
 export {
+  baseColor,
+  nodesBaseStyle,
+  edgesBaseStyle,
   legendOption,
   categoryOption,
   cytoscapeOption

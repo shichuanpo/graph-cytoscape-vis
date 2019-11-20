@@ -4,13 +4,19 @@ const handlers = {
     this.elements().unselect()
     if (element !== this) {
       this.elements(element).select()
+    } else {
+      this.elements('.hover').removeClass('hover')
+      this.elements('.unhover').removeClass('unhover')
     }
   },
-  _click: function (e) {
+  _tap: function (e) {
     let element = e.target
     this.elements().unselect()
     if (element !== this) {
       this.elements(element).select()
+    } else {
+      this.elements('.hover').removeClass('hover')
+      this.elements('.unhover').removeClass('unhover')
     }
   },
   _select: function (e) {
@@ -23,8 +29,8 @@ const handlers = {
         .merge(neighborhood)
         .merge(connectedNodes)
       let elseElements = this.elements().difference(hoverElements)
-      elseElements.addClass('unhover')
-      hoverElements.addClass('hover')
+      elseElements.removeClass('hover').addClass('unhover')
+      hoverElements.removeClass('unhover').addClass('hover')
     }
   },
   _unselect: function (e) {
@@ -41,11 +47,23 @@ const handlers = {
       hoverElements.removeClass('hover')
     }
   }
+  // _dragfree: function (e) {
+  //   let element = e.target
+  //   if (element.isNode && element.isNode()) {
+  //     element.lock()
+  //   }
+  // },
+  // _tapstart: function (e) {
+  //   let element = e.target
+  //   if (element.isNode && element.isNode()) {
+  //     element.locked() && element.unlock()
+  //   }
+  // }
 }
 function createEvents (cy) {
   let selector = ''
   let events = []
-  ;['select', 'unselect', 'click', 'cxttap'].forEach(item => {
+  ;['select', 'unselect', 'tap', 'cxttap'].forEach(item => {
     selector
       ? cy.on(item, selector, handlers[`_${item}`])
       : cy.on(item, handlers[`_${item}`])

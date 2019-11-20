@@ -9,7 +9,7 @@ import cytoscape from 'cytoscape'
 import createCytoscape from './createCytoscape'
 import createEvents from './createEvents'
 import { merge, mergeArrayFindSelector, isObject, isArray, isFunction } from './util'
-import { categoryOption, cytoscapeOption } from './defaultOption.js'
+import { categoryOption, cytoscapeOption, nodesBaseStyle, edgesBaseStyle } from './defaultOption.js'
 export default {
   name: 'vueCytoscape',
   props: {
@@ -35,111 +35,126 @@ export default {
   data () {
     return {
       $cytoscapeInstance: null,
-      defaultColor: '#ccc',
-      defaultImage: '#ccc',
       events: []
     }
   },
   computed: {
-    colors () {
-      if (this.category && this.category.colors) {
-        let colors = this.category.colors
-        if (isArray(colors)) {
-          return merge([], categoryOption.colors, colors || [])
-        } else if (isObject(colors)) {
-          return colors
-        }
-      }
-      return categoryOption.colors || {}
-    },
-    images () {
-      if (this.category && this.category.images) {
-        let images = this.category.images
-        if (isArray(images)) {
-          return merge([], categoryOption.images, images || [])
-        } else if (isObject(images)) {
-          return images
-        }
-      }
-      return categoryOption.images || {}
-    },
-    categoryBy () {
-      return this.category && (this.category.data || this.category.key) || categoryOption.key
-    },
-    cytoscapeOptions () {
-      return mergeArrayFindSelector({}, cytoscapeOption, {
-        style: [{
-          selector: 'node',
-          style: {
-            'shape': 'barrel',
-            'background-color': (ele) => {
-              let categoryName = this.dataByCategory(ele.data())
-              return this.colorByCategory[categoryName] || this.defaultColor
-            },
-            'background-image': (ele) => {
-              let categoryName = this.dataByCategory(ele.data())
-              return this.imgByCategory[categoryName] || this.defaultImage
-            },
-            'background-width': '80%',
-            'background-height': '80%',
-            'background-repeat': 'no-repeat',
-            'background-opacity': 0.6,
-            'background-image-opacity': 0.6,
-            'z-index-compare': 'manual',
-            'z-index': 2
-          }
-        }]
-      }, this.options || {})
-    },
-    categorys () {
+    nodesCategorys () {
       let _categorys = Array.from(
-        new Set(this.data.filter(dat => dat.group === 'nodes').map(dat => this.dataByCategory(dat.data)).filter(g => !!g))
+        new Set(this.data.filter(dat => dat.group === 'nodes').map(dat => this.dataByCategory(dat.data, 'nodes')).filter(g => !!g))
       )
       return _categorys
     },
-    colorByCategory () {
-      let colorCategory = {}
-      if (isArray(this.colors)) {
-        this.categorys.forEach((g, idx) => {
-          idx = idx % this.colors.length
-          colorCategory[g] = this.colors[idx]
-        })
-      } else if (isObject(this.colors)) {
-        colorCategory = this.colors
-      }
-      if (isArray(this.categoryBy)) {
-        this.categoryBy.forEach(({ color, name, matching }) => {
-          let _color = color
-          if (isFunction(color)) {
-            let datas = this.data.map(d => d.data).filter(d => matching && matching(d))
-            _color = color(datas)
-          }
-          colorCategory[name] = _color || colorCategory[name] || this.defaultColor
-        })
-      }
-      return colorCategory
+    nodesCategoryBy () {
+      return this.category && this.category.nodes && (this.category.nodes.data || this.category.nodes.key) || categoryOption.nodes.key
     },
-    imgByCategory () {
-      let imgCategory = {}
-      if (isArray(this.images)) {
-        this.categorys.forEach((g, idx) => {
-          idx = idx % this.images.length
-          imgCategory[g] = this.images[idx]
-        })
-      } else if (isObject(this.images)) {
-        imgCategory = this.images
+    nodesStyles () {
+      if (this.category && this.category.nodes && this.category.nodes.styles) {
+        let _styles = this.category.nodes.styles
+        if (isArray(_styles) && isArray(categoryOption.nodes.styles)) {
+          return merge([], categoryOption.nodes.styles, _styles || [])
+        } else if (isObject(_styles) && isObject(categoryOption.nodes.styles)) {
+          return merge({}, categoryOption.nodes.styles, _styles || {})
+        } else if (isObject(_styles) && isArray(categoryOption.nodes.styles)) {
+          let _newStyles = {}
+          this.nodesCategorys.forEach((key, idx) => {
+            let _idx = idx % categoryOption.nodes.styles.length
+            _newStyles[key] = merge({}, categoryOption.nodes.styles[_idx], _styles[key] || {})
+          })
+          return _newStyles
+        }
       }
-      if (isArray(this.categoryBy)) {
-        this.categoryBy.forEach(({ image, name, matching }) => {
-          let _image = image
-          if (isFunction(image)) {
-            let datas = this.data.map(d => d.data).filter(d => matching && matching(d))
-            _image = image(datas)
+      return categoryOption.nodes.styles || {}
+    },
+    nodesStyleByCategory () {
+      let _styleCategory = {}
+      if (isArray(this.nodesStyles)) {
+        this.nodesCategorys.forEach((g, idx) => {
+          idx = idx % this.nodesStyles.length
+          _styleCategory[g] = this.nodesStyles[idx]
+        })
+      } else if (isObject(this.nodesStyles)) {
+        _styleCategory = this.nodesStyles
+      }
+      if (isArray(this.nodesCategoryBy)) {
+        this.nodesCategoryBy.forEach(({ style, name, matching }) => {
+          let _style = style
+          if (isFunction(style)) {
+            let datas = this.data.filter(d => d.data.group === 'nodes').map(d => d.data).filter(d => matching && matching(d))
+            _style = style(datas)
           }
-          imgCategory[name] = _image || imgCategory[name] || this.defaultImage
+          _styleCategory[name] = _style || _styleCategory[name] || nodesBaseStyle
         })
       }
-      return imgCategory
+      return _styleCategory
+    },
+    edgesCategorys () {
+      let _categorys = Array.from(
+        new Set(this.data.filter(dat => dat.group === 'edges').map(dat => this.dataByCategory(dat.data, 'edges')).filter(g => !!g))
+      )
+      return _categorys
+    },
+    edgesCategoryBy () {
+      return this.category && this.category.edges && (this.category.edges.data || this.category.edges.key) || categoryOption.edges.key
+    },
+    edgesStyles () {
+      if (this.category && this.category.edges && this.category.edges.styles) {
+        let _styles = this.category.edges.styles
+        if (isArray(_styles) && isArray(categoryOption.edges.styles)) {
+          return merge([], categoryOption.edges.styles, _styles || [])
+        } else if (isObject(_styles) && isObject(categoryOption.edges.styles)) {
+          return merge({}, categoryOption.edges.styles, _styles || {})
+        } else if (isObject(_styles) && isArray(categoryOption.edges.styles)) {
+          let _newStyles = {}
+          this.edgesCategorys.forEach((key, idx) => {
+            let _idx = idx % categoryOption.edges.styles.length
+            _newStyles[key] = merge({}, categoryOption.edges.styles[_idx], _styles[key] || {})
+          })
+          return _newStyles
+        }
+      }
+      return categoryOption.edges.styles || {}
+    },
+    edgesStyleByCategory () {
+      let _styleCategory = {}
+      if (isArray(this.edgesStyles)) {
+        this.edgesCategorys.forEach((g, idx) => {
+          idx = idx % this.edgesStyles.length
+          _styleCategory[g] = this.edgesStyles[idx]
+        })
+      } else if (isObject(this.edgesStyles)) {
+        _styleCategory = this.edgesStyles
+      }
+      if (isArray(this.edgesCategoryBy)) {
+        this.edgesCategoryBy.forEach(({ style, name, matching }) => {
+          let _style = style
+          if (isFunction(style)) {
+            let datas = this.data.filter(d => d.data.group === 'edges').map(d => d.data).filter(d => matching && matching(d))
+            _style = style(datas)
+          }
+          _styleCategory[name] = _style || _styleCategory[name] || edgesBaseStyle
+        })
+      }
+      return _styleCategory
+    },
+    cytoscapeOptions () {
+      let _nodeStyle = {}
+      Object.keys(nodesBaseStyle).forEach(key => {
+        _nodeStyle[key] = (ele) => this.findStylePropertyByEle(ele, key)
+      })
+      let _edgeStyle = {}
+      Object.keys(edgesBaseStyle).forEach(key => {
+        _edgeStyle[key] = (ele) => this.findStylePropertyByEle(ele, key)
+      })
+      return mergeArrayFindSelector({}, cytoscapeOption, {
+        style: [{
+          selector: 'node',
+          style: _nodeStyle
+        }, {
+          selector: 'edge',
+          style: _edgeStyle
+        }]
+      }, this.options || {})
     }
   },
   watch: {
@@ -157,30 +172,20 @@ export default {
     }
   },
   methods: {
-    dataByCategory (data) {
-      if (isArray(this.categoryBy)) {
-        let _category = this.categoryBy.find(category => category.matching && category.matching(data))
+    findStylePropertyByEle (ele, prop) {
+      let _categoryName = this.dataByCategory(ele.data(), ele.group())
+      let _isNode = ele.isNode()
+      return _isNode
+        ? (this.nodesStyleByCategory[_categoryName] && this.nodesStyleByCategory[_categoryName][prop]) || nodesBaseStyle[prop]
+        : (this.edgesStyleByCategory[_categoryName] && this.edgesStyleByCategory[_categoryName][prop]) || edgesBaseStyle[prop]
+    },
+    dataByCategory (data, type) {
+      if (isArray(this[`${type}CategoryBy`])) {
+        let _category = this[`${type}CategoryBy`].find(category => category.matching && category.matching(data))
         return _category ? (isFunction(_category.name) ? _category.name(data) : _category.name) : undefined
       } else {
-        return data[this.categoryBy]
+        return data[this[`${type}CategoryBy`]]
       }
-    },
-    filterByLegend (categoryName, isFilter) {
-      let legendModel = this.$cytoscapeInstance.scratch('legend')
-      this.$cytoscapeInstance.startBatch()
-      if (categoryName) {
-        legendModel[categoryName] && this.$cytoscapeInstance.resetFilter(legendModel[categoryName])
-        legendModel[categoryName] = isFilter ? this.$cytoscapeInstance.filterNodesByFunction(ele => this.dataByCategory(ele.data()) !== categoryName) : null
-      } else {
-        Object.keys(legendModel).forEach(_categoryName => {
-          if (_categoryName && legendModel[_categoryName]) {
-            legendModel[_categoryName] && this.$cytoscapeInstance.resetFilter(legendModel[_categoryName])
-            legendModel[_categoryName] = isFilter ? this.$cytoscapeInstance.filterNodesByFunction(ele => this.dataByCategory(ele.data()) !== _categoryName) : null
-          }
-        })
-      }
-      this.$cytoscapeInstance.scratch('legend', legendModel)
-      this.$cytoscapeInstance.endBatch()
     },
     /****
      * cytoscape option设置只有拆分的放法
@@ -200,17 +205,22 @@ export default {
     async setData (data) {
       if (!this.$cytoscapeInstance) return this.createCytoscape()
       await this.$nextTick()
-      this.$cytoscapeInstance.resetFilter()
-      let _data = data.filter(d => !this.$cytoscapeInstance.$(`#${d.data.id}`).inside())
-      this.$cytoscapeInstance.add(_data)
+      let _data = merge([], data)
+      this.$cytoscapeInstance.startBatch()
+      let _allElements = this.$cytoscapeInstance.elements()
+      let _removeData = _allElements.filter(ele => !_data.some(item => ele.id() === item.data.id))
+      this.$cytoscapeInstance.remove(_removeData)
+      let _addData = _data.filter(d => !_allElements.some(_ele => _ele.id() === d.data.id))
+      this.$cytoscapeInstance.add(_addData)
+      this.$cytoscapeInstance.renderFilter()
       let layout = this.$cytoscapeInstance.layout(this.cytoscapeOptions.layout)
+      this.$cytoscapeInstance.endBatch()
       layout.run()
     },
     createCytoscape () {
       this.$cytoscapeInstance && this.$cytoscapeInstance.destroy()
       let container = this.$refs.cytoscapeContainer
       this.$cytoscapeInstance = createCytoscape(container, this.data, this.cytoscapeOptions)
-      !this.$cytoscapeInstance.filterByLegend && cytoscape('core', 'filterByLegend', this.filterByLegend)
       // register all the component events as cytoscape ones
       let _events = createEvents(this.$cytoscapeInstance)
       this.events.concat(_events)
@@ -232,6 +242,12 @@ export default {
         })
         await this.$cytoscapeInstance.destroy()
       }
+    },
+    resetFilter (id) {
+      return this.$cytoscapeInstance && this.$cytoscapeInstance.resetFilter(id)
+    },
+    filterByFunction (func) {
+      return this.$cytoscapeInstance && this.$cytoscapeInstance.filterByFunction(func)
     }
   },
   mounted () {
