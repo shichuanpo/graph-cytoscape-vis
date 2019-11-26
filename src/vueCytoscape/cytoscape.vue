@@ -9,7 +9,7 @@ import cytoscape from 'cytoscape'
 import createCytoscape from './createCytoscape'
 import createEvents from './createEvents'
 import { merge, mergeArrayFindSelector, isObject, isArray, isFunction } from './util'
-import { categoryOption, cytoscapeOption, nodesBaseStyle, edgesBaseStyle } from './defaultOption.js'
+import { categoryOption, cytoscapeOption } from './defaultOption.js'
 export default {
   name: 'vueCytoscape',
   props: {
@@ -80,10 +80,10 @@ export default {
         this.nodesCategoryBy.forEach(({ style, name, matching }) => {
           let _style = style
           if (isFunction(style)) {
-            let datas = this.data.filter(d => d.data.group === 'nodes').map(d => d.data).filter(d => matching && matching(d))
+            let datas = this.data.filter(d => d.group === 'nodes').map(d => d.data).filter(d => matching && matching(d))
             _style = style(datas)
           }
-          _styleCategory[name] = _style || _styleCategory[name] || nodesBaseStyle
+          _styleCategory[name] = merge({}, _styleCategory[name] || {}, _style || {})
         })
       }
       return _styleCategory
@@ -132,18 +132,30 @@ export default {
             let datas = this.data.filter(d => d.data.group === 'edges').map(d => d.data).filter(d => matching && matching(d))
             _style = style(datas)
           }
-          _styleCategory[name] = _style || _styleCategory[name] || edgesBaseStyle
+          _styleCategory[name] = merge({}, _styleCategory[name] || {}, _style || {})
         })
       }
       return _styleCategory
     },
     cytoscapeOptions () {
       let _nodeStyle = {}
-      Object.keys(nodesBaseStyle).forEach(key => {
+      let _allNodeProps = {}
+      Object.keys(this.nodesStyleByCategory).forEach(category => {
+        Object.keys(this.nodesStyleByCategory[category]).forEach(prop => {
+          _allNodeProps[prop] = true
+        })
+      })
+      Object.keys(_allNodeProps).forEach(key => {
         _nodeStyle[key] = (ele) => this.findStylePropertyByEle(ele, key)
       })
       let _edgeStyle = {}
-      Object.keys(edgesBaseStyle).forEach(key => {
+      let _allEdgeProps = {}
+      Object.keys(this.edgesStyleByCategory).forEach(category => {
+        Object.keys(this.edgesStyleByCategory[category]).forEach(prop => {
+          _allEdgeProps[prop] = true
+        })
+      })
+      Object.keys(_allEdgeProps).forEach(key => {
         _edgeStyle[key] = (ele) => this.findStylePropertyByEle(ele, key)
       })
       return mergeArrayFindSelector({}, cytoscapeOption, {
@@ -173,11 +185,11 @@ export default {
   },
   methods: {
     findStylePropertyByEle (ele, prop) {
-      let _categoryName = this.dataByCategory(ele.data(), ele.group())
       let _isNode = ele.isNode()
+      let _categoryName = this.dataByCategory(ele.data(), _isNode ? 'nodes' : 'edges')
       return _isNode
-        ? (this.nodesStyleByCategory[_categoryName] && this.nodesStyleByCategory[_categoryName][prop]) || nodesBaseStyle[prop]
-        : (this.edgesStyleByCategory[_categoryName] && this.edgesStyleByCategory[_categoryName][prop]) || edgesBaseStyle[prop]
+        ? (this.nodesStyleByCategory[_categoryName] && this.nodesStyleByCategory[_categoryName][prop]) || ele.style(prop)
+        : (this.edgesStyleByCategory[_categoryName] && this.edgesStyleByCategory[_categoryName][prop]) || ele.style(prop)
     },
     dataByCategory (data, type) {
       if (isArray(this[`${type}CategoryBy`])) {

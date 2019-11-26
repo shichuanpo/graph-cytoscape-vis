@@ -70,26 +70,27 @@ const legendOption = {
  */
 const nodesBaseStyle = {
   'shape': 'round-rectangle',
-  'background-color': '#ccc',
+  'background-color': 'rgb(5, 161, 140)',
   'background-opacity': 0.8,
-  'border-width': 1,
-  'border-style': 'solid', // 节点边框的样式；可以是solid，dotted，dashed，或double。
-  'border-color': '#ccc',
-  'border-opacity': 1,
-  'background-image': 'none',
+  'background-image-opacity': 0.8,
   'background-width': '80%',
   'background-height': '80%',
   'background-repeat': 'no-repeat',
   'z-index-compare': 'manual',
+  'border-width': 1,
   'z-index': 2
 }
 /****
  * 支持的基础edge样式(cytoscape不支持驼峰)
  */
 const edgesBaseStyle = {
-  'line-style': 'solid',
-  'line-color': '#ccc',
-  'width': 1
+  width: 1,
+  'curve-style': 'bezier',
+  'target-arrow-shape': 'vee',
+  'target-arrow-color': '#d1dbda',
+  'line-color': '#d1dbda',
+  'opacity': 0.8,
+  'z-index': 1
 }
 const baseColor = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3']
 /**
@@ -116,7 +117,7 @@ const categoryOption = {
   },
   edges: {
     key: 'category',
-    styles: [edgesBaseStyle]
+    styles: [JSON.parse(JSON.stringify(edgesBaseStyle))]
   }
 }
   /**
@@ -137,14 +138,7 @@ const cytoscapeOption = {
     },
     {
       selector: 'node',
-      style: {
-        'background-color': 'rgb(5, 161, 140)',
-        'background-opacity': 0.8,
-        'background-image-opacity': 0.8,
-        'z-index-compare': 'manual',
-        'border-width': 1,
-        'z-index': 2
-      }
+      style: JSON.parse(JSON.stringify(nodesBaseStyle))
     },
     {
       selector: 'node:selected',
@@ -163,15 +157,7 @@ const cytoscapeOption = {
     },
     {
       selector: 'edge',
-      style: {
-        width: 1,
-        'curve-style': 'bezier',
-        'target-arrow-shape': 'vee',
-        'target-arrow-color': '#d1dbda',
-        'line-color': '#d1dbda',
-        'opacity': 0.8,
-        'z-index': 1
-      }
+      style: JSON.parse(JSON.stringify(edgesBaseStyle))
     },
     {
       selector: 'edge[label]',
@@ -222,9 +208,6 @@ export default {
   cytoscapeOption
 }
 export {
-  baseColor,
-  nodesBaseStyle,
-  edgesBaseStyle,
   legendOption,
   categoryOption,
   cytoscapeOption
