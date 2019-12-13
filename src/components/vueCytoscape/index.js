@@ -1,6 +1,6 @@
 
 import VueCytoscape from './cytoscape.vue'
-import VueCytoscapeLegend from './legend.vue'
+import VueCytoscapeLegend from './cytoscape-legend.vue'
 import cytoscape from 'cytoscape'
 
 export default {

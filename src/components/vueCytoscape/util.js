@@ -7,6 +7,9 @@ const isArray = function (item) {
 const isFunction = function (item) {
   return Object.prototype.toString.call(item) === '[object Function]'
 }
+const isUndefined = function (item) {
+  return item === undefined
+}
 const __merge = function (type = 'merge', target, source) {
   if (isObject(target) && isObject(source)) {
     for (let key in source) {
@@ -16,7 +19,7 @@ const __merge = function (type = 'merge', target, source) {
       } else if (isArray(source[key])) {
         target[key] = isArray(target[key]) ? target[key] : []
         target[key] = __merge(type, target[key], source[key])
-      } else {
+      } else if (!isUndefined(source[key])) {
         target[key] = source[key]
       }
     }
@@ -29,7 +32,7 @@ const __merge = function (type = 'merge', target, source) {
         } else if (isArray(s)) {
           target[idx] = isArray(target[idx]) ? target[idx] : []
           target[idx] = __merge(type, target[idx], s)
-        } else {
+        } else if (!isUndefined(s)) {
           target[idx] = source[idx]
         }
       })
@@ -128,15 +131,27 @@ function colorRgba (color = '', alpha = 1) {
     return color
   }
 }
-
+function debounce (fn, delay, ctx) {
+  let timer = null
+  return function () {
+    let context = ctx || this
+    let args = arguments
+    clearTimeout(timer)
+    timer = setTimeout(function () {
+      fn.apply(context, args)
+    }, delay)
+  }
+}
 export {
   isObject,
   isArray,
   isFunction,
+  isUndefined,
   merge,
   mergeArrayFindSelector,
   mergeArrayConcat,
   mergeArrayReplace,
   createId,
-  colorRgba
+  colorRgba,
+  debounce
 }

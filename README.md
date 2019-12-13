@@ -4,107 +4,176 @@
 
 [关系图实例](https://shichuanpo.github.io/graph-cytoscape-vis/demo/#/cytoscape)
 
-## options
+## components
 
+### vue-cytoscape
+#### props
+参数 | 说明 | 类型 | 可选值 | 默认值
+:-: | :-: | :-: | :-: | :-:
+options | cytoscape原生配置，包括布局， 样式等等；详见cytoscape文档: http://js.cytoscape.org/#introduction | Object | - | {} | 
+data | cytoscape的图数据 | Array | - | [] |
+category | 分类配置，详见下表 | Object | - | {} |
+
+##### options
 ```javascript
 options = {
-  legend: {
-    show: false,
-    type: 'plain', // plain： 普通图例 / scroll： 滚动图例
-    orient: 'horizontal', // horizontal: 横向图例 ／ vertical: 纵向图例
-    /**
-     * 图例容器的样式，标准写法 (position不可改，为absolute)
-     * **/
-    style: {
-      padding: '10px',
-      top: 0,
-      right: 0
-    },
-    itemGap: 10, // 图例之间的间隔
-    /**
-     * 图例标记的样式
-     * **/
-    tagStyle: {
-      display: 'inline-block',
-      'vertical-align': 'top',
-      border: '1px transparent solid',
-      height: '14px',
-      'line-height': '10px',
-      padding: '1px',
-      'box-sizing': 'border-box',
-      width: '25px',
-      'border-radius': '3px',
-      'margin-right': '1px',
-      'text-align': 'center'
-    },
-    /**
-     * 图例标记选中的样式，为空的时候自动根据分类配置的颜色
-     * **/
-    activeTagStyle: {},
-    /**
-     * 图例标记未选中的样式
-     * **/
-    inactiveTagStyle: {
-      background: '#ccc',
-      border: '1px transparent solid'
-    },
-    /**
-     * 图例文字的样式
-     * **/
-    textStyle: {
-      display: 'inline-block',
-      'vertical-align': 'top',
-      border: '1px transparent solid',
-      height: '14px',
-      'line-height': '10px',
-      padding: '1px',
-      'box-sizing': 'border-box',
-      'font-size': '12px',
-      color: '#333'
-    },
-    /**
-     * 图例文字选中的样式，为空的时候自动根据分类配置的颜色
-     * **/
-    activeTextStyle: {},
-    /**
-     * 图例文字未选中的样式
-     * **/
-    inactiveTextStyle: {
-      color: '#ccc'
-    },
-    formatter: string => string // 格式转换，翻译
+  layout: {
+    name: 'cose',
+    randomize: true,
+    animate: false
   },
-  /**
-   * 分类配置：实体分类和边分类
-   * nodes:
-   * edges:
-   *      key: 指定获取数据中的某个字段
-   *      styles: 分类配色，可以为Array/Object键值对,如下
-   *      {
-            category1: {
-              'background-color': '#ccc' // 与cytoscape样式一致
-            }
-          }
-          或者
-          [{'background-color': '#fff'}]
+  style: [
+    {
+      selector: 'node',
+      style: {
+        'background-color': 'rgb(5, 161, 140)',
+        'background-opacity': 0.6,
+        'background-image-opacity': 0.6,
+        'z-index-compare': 'manual',
+        'z-index': 2
+      }
+    }
+  ],
+  minZoom: 0.5,
+  maxZoom: 10
+}
+```
+##### data
+```javascript
+data = [{
+  group: 'nodes',
+  data: {
+    id: 'XXX'
+  }
+}, 
+  group: 'nodes',
+  data: {
+    id: 'YYY'
+  }
+}, {
+  group: 'edges',
+  data: {
+    id: 'XXX-YYY',
+    source: 'XXX',
+    target: 'YYY'
+  }
+}]
+```
+#### category
+<table>
+    <tr>
+      <th></th>
+	  <th>类型</th>
+      <th>参数</th>
+      <th>说明</th>
+	  <th>类型</th>
+	  <th>可选值</th>
+	  <th>默认值</th>
+  </tr>
+  <tr>
+      <td rowspan='6'>nodes</td>
+      <td rowspan='4'>Array</td>
+      <td>name</td>
+	  <td>指定分类项名称</td>
+	  <td>String</td>
+	  <td>-</td>
+	  <td>-</td>
+      
+  </tr>
+  <tr>
+      <td>matching</td>
+	  <td>分类项匹配规则</td>
+	  <td>Function</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+      <td>style</td>
+	  <td>分类配色，具体参考cytoscape node颜色属性</td>
+	  <td>Object</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+      <td>formatter</td>
+	  <td>翻译</td>
+	  <td>Function</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+  <td rowspan='2'>Object</td>
+      <td>key</td>
+	  <td>指定获取数据中的某个字段</td>
+	  <td>String</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+	  <td>styles</td>
+	  <td>为上述style参数的数组或者key的键值对</td>
+	  <td>Object/Array</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+      <td rowspan='6'>edges</td>
+      <td rowspan='4'>Array</td>
+      <td>name</td>
+	  <td>指定分类项名称</td>
+	  <td>String</td>
+	  <td>-</td>
+	  <td>-</td>
+      
+  </tr>
+  <tr>
+      <td>matching</td>
+	  <td>分类项匹配规则</td>
+	  <td>Function</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+      <td>style</td>
+	  <td>分类配色，具体参考cytoscape edge颜色属性</td>
+	  <td>Object</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+      <td>formatter</td>
+	  <td>翻译</td>
+	  <td>Function</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+  <td rowspan='2'>Object</td>
+      <td>key</td>
+	  <td>指定获取数据中的某个字段</td>
+	  <td>String</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+	  <td>styles</td>
+	  <td>为上述style参数的数组或者key的键值对</td>
+	  <td>Object/Array</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+</table>
 
-   *      data: Array类型，手动分配每一个分类，具体结构如下
-   *            [{
-   *               name: '分类1',
-   *               matching: data => data.label === '分类1', // 目前只支持函数
-   *               style, // 支持 cytoscape样式，以及函数回调((datas) => datas[0].style)
-   *                      // 其中datas为分类集合
-   *            }]
-   * **/
-  category: {
-    nodes: {
-      key: 'category',
-      styles: [{
+```javascript
+category = {
+    nodes: [{
+      name: 'category1',
+      matching: data => data.label === 'category1', // 目前只支持函数
+      style: {
         'background-color': '#c23531'
-      }, {
-        'background-color': '#2f4554'
-      }]
-    },
+      },
+      formatter: name => '分类1'
+    }],
     edges: {
       key: 'category',
       styles: {
@@ -116,104 +185,187 @@ options = {
         }
       }
     }
+  }
+```
+#### methods
+方法名 | 说明 | 参数
+:-: | :-: | :-:
+filterByFunction | 筛选数据 | Function (ele, elements) {}|
+resetFilter | 重置过滤 | resetid|
+#### events
+事件名 | 说明 | 参数
+:-: | :-: | :-:
+init | cytoscape实例创建完毕 | Cytoscape实例
+其他详见cytoscape文档: http://js.cytoscape.org/#introduction
+
+### vue-legend
+#### props
+参数 | 说明 | 类型 | 可选值 | 默认值
+:-: | :-: | :-: | :-: | :-:
+value / v-model | 绑定值 | Object | - | -|
+data | 图例数据 | Array | - | []|
+options | 图例配置 | Object | - | {}| 
+##### options
+```javascript
+options = {
+  show: false,
+  type: 'scroll', // plain： 普通图例 / scroll： 滚动图例
+  orient: 'vertical', // horizontal: 横向图例 ／ vertical: 纵向图例
+  /**
+   * 图例容器的样式，标准写法 (position不可改，为absolute)
+   * **/
+  style: {
+    cursor: 'pointer',
+    padding: '10px'
+  },
+  itemGap: 10,
+  animation: true, // 翻页是否需要动画
+  animationDurationUpdate: 0.8, // 翻页动画时长，单位s
+  /**
+   * 图例标记的样式
+   * **/
+  tagStyle: {
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    borderWidth: '1px',
+    height: '14px',
+    lineHeight: '10px',
+    padding: '1px',
+    boxSizing: 'border-box',
+    width: '25px',
+    borderRadius: '3px',
+    marginRight: '1px',
+    textAlign: 'center'
   },
   /**
-   * catoscape配置： 完全参照cytoscape配置，详见cytoscape文档: http://js.cytoscape.org/#introduction
+   * 图例标记选中的样式，为空的时候自动根据分类配置的颜色
    * **/
-  cytoscape: {
-    layout: {
-      name: 'cose',
-      randomize: true,
-      animate: false
-    },
-    style: [
-      {
-        selector: ':active',
-        style: {
-          'overlay-opacity': 0
-        }
-      },
-      {
-        selector: 'node:selected',
-        style: {
-          'border-color': 'rgb(5, 161, 140)',
-          'border-width': 2
-        }
-      },
-      {
-        selector: 'node',
-        style: {
-          'background-color': 'rgb(5, 161, 140)',
-          'background-opacity': 0.6,
-          'background-image-opacity': 0.6,
-          'z-index-compare': 'manual',
-          'z-index': 2
-        }
-      },
-      {
-        selector: 'node[label]',
-        style: {
-          label: 'data(label)',
-          'font-size': '9px',
-          color: '#666',
-          'z-index': 2
-        }
-      },
-      {
-        selector: 'edge',
-        style: {
-          width: 1,
-          'curve-style': 'bezier',
-          'target-arrow-shape': 'vee',
-          'target-arrow-color': '#dddddd',
-          'line-color': '#dddddd',
-          'z-index': 1
-        }
-      },
-      {
-        selector: 'edge[label]',
-        style: { 'font-size': '9px', color: '#666', 'z-index': 1 }
-      },
-      {
-        selector: '.hover',
-        style: {
-          'target-arrow-color': '#aaa',
-          'line-color': '#aaa',
-          color: '#333',
-          'background-opacity': 1,
-          'background-image-opacity': 1,
-          'z-index': 99
-        }
-      },
-      {
-        selector: 'edge.hover',
-        style: {
-          width: 2,
-          'z-index': 98
-        }
-      },
-      {
-        selector: '.unhover',
-        style: {
-          'target-arrow-color': '#eee',
-          'line-color': '#eee',
-          color: '#eee',
-          'background-opacity': 0.3,
-          'background-image-opacity': 0.3,
-          'z-index': 0
-        }
-      },
-      {
-        selector: 'edge.unhover',
-        style: {
-          width: 1
-        }
-      }
-    ],
-    minZoom: 0.5,
-    maxZoom: 10
-    // userPanningEnabled: false,
-    // boxSelectionEnabled: true
-  }
+  activeTagStyle: {
+    backgroundColor: '#c23531'
+  },
+  /**
+   * 图例标记未选中的样式
+   * **/
+  inactiveTagStyle: {
+    backgroundColor: '#ccc'
+  },
+  /**
+   * 图例文字的样式
+   * **/
+  textStyle: {
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    height: '14px',
+    lineHeight: '10px',
+    padding: '1px',
+    boxSizing: 'border-box',
+    fontSize: '12px',
+    color: '#333'
+  },
+  /**
+   * 图例文字选中的样式，为空的时候自动根据分类配置的颜色
+   * **/
+  activeTextStyle: {},
+  /**
+   * 图例文字未选中的样式
+   * **/
+  inactiveTextStyle: {
+    color: '#ccc'
+  },
+  formatter: string => string // 格式转换，翻译
 }
 ```
+##### data
+```javascript
+data = ['分类1', '分类2']
+data = [{
+  name: '分类1', tagStyle, activeTagStyle, inactiveTagStyle, textStyle, activeTextStyle, inactiveTextStyle, formatter
+}, {
+  name: '分类2', tagStyle, activeTagStyle, inactiveTagStyle, textStyle, activeTextStyle, inactiveTextStyle, formatter
+}]
+```
+#### events
+事件名 | 说明 | 参数
+:-: | :-: | :-:
+change | 图例变化 | legendMode
+
+### vue-cytoscape-legend
+#### props
+参数 | 说明 | 类型 | 可选值 | 默认值
+:-: | :-: | :-: | :-: | :-:
+value / v-model | 绑定值 | Object | - | -|
+data | cytoscape渲染数据 | Array | - | [] |
+options | 图例配置 | Object | - | {}| 
+type | 图例类型 | String | nodes/edges | nodes| 
+category | 图例分类配置 | Object | - | {}| 
+#### category
+<table>
+    <tr>
+      <th>两种用法</th>
+      <th>参数</th>
+      <th>说明</th>
+	  <th>类型</th>
+	  <th>可选值</th>
+	  <th>默认值</th>
+  </tr>
+  <tr>
+      <td rowspan='4'>Array</td>
+      <td>name</td>
+	  <td>指定分类项名称</td>
+	  <td>String</td>
+	  <td>-</td>
+	  <td>-</td>
+      
+  </tr>
+  <tr>
+      <td>matching</td>
+	  <td>分类项匹配规则</td>
+	  <td>Function</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+      <td>style</td>
+	  <td>分类配色，具体参考cytoscape node颜色属性</td>
+	  <td>Object</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+      <td>formatter</td>
+	  <td>翻译</td>
+	  <td>Function</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+  <td rowspan='2'>Object</td>
+      <td>key</td>
+	  <td>指定获取数据中的某个字段</td>
+	  <td>String</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+  <tr>
+	  <td>styles</td>
+	  <td>为上述style参数的数组或者key的键值对</td>
+	  <td>Object/Array</td>
+	  <td>-</td>
+	  <td>-</td>
+  </tr>
+</table>
+
+```javascript
+category = [{
+  name: 'category1',
+  matching: data => data.label === 'category1', // 目前只支持函数
+  style: {
+    'background-color': '#c23531'
+  },
+  formatter: name => '分类1'
+}]
+```
+#### events
+事件名 | 说明 | 参数
+:-: | :-: | :-:
+change | 图例变化 | legendMode
