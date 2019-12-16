@@ -188,14 +188,47 @@ category = {
   }
 ```
 #### methods
-方法名 | 说明 | 参数
-:-: | :-: | :-:
-filterByFunction | 筛选数据 | Function (ele, elements) {}|
-resetFilter | 重置过滤 | resetid|
+<table>
+    <tr>
+      <th>方法名</th>
+      <th>参数</th>
+      <th>说明</th>
+      <th>返回</th>
+    </tr>
+    <tr>
+      <td rowspan="3">filterByFunction</td>
+      <td>Function (elements) { return elements }</td>
+      <td>回调函数返回过滤后的元素集合</td>
+      <td>filterid</td>
+    </tr>
+    <tr>
+      <td>filterid</td>
+      <td>用以重置已有的filterid</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>reLayout</td>
+      <td>过滤集合后是否需要重新布局，默认false</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td rowspan="2">resetFilter</td>
+      <td>filterid</td>
+      <td>重置filterid对应的过滤</td>
+      <td>-</td>
+    </tr>
+    <tr>
+      <td>reLayout</td>
+      <td>过滤集合后是否需要重新布局，默认false</td>
+      <td>-</td>
+    </tr>
+</table>
+
 #### events
 事件名 | 说明 | 参数
 :-: | :-: | :-:
 init | cytoscape实例创建完毕 | Cytoscape实例
+
 其他详见cytoscape文档: http://js.cytoscape.org/#introduction
 
 ### vue-legend

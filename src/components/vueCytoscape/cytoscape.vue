@@ -1,7 +1,7 @@
 <template lang="pug">
   .cytoscape--container
     .cytoscape--container__graph(ref="cytoscapeBox")
-    .cytoscape--container__loading(v-if="preLayout && (loading.layoutPregress < 100 || !loading.rendered)")
+    .cytoscape--container__loading(v-if="loading.layoutPregress < 100 || !loading.rendered")
       .progress-bar(v-if="loading.layoutPregress < 100")
         .progress-bar__outer
           .progress-bar__inner(:style="{width: progressText}")
@@ -45,18 +45,16 @@ export default {
       events: [],
       preLayoutOption: {
         name: 'preset',
-        fit: false,
+        fit: true,
         // positions: function (node) {
         //   return node.position
         // }
       },
       $webWorker: null,
-      loading: {
-        layoutPregress: 0,
-        rendered: false
-      },
+      loading: this.reLoading(),
       cacheRandomIdMap: {},
       filters: {},
+      $layout: null,
       $removeData: null
     }
   },
@@ -230,32 +228,31 @@ export default {
         let _eleIn = _allElements.$id(_data.data.id)
         if (!_eleIn || !_eleIn.length) { // 添加到图中
           _addData.push(_data)
-        } else { // 更新信息(目前只处理位置信息)
+        } else if (_eleIn.isNode() && this.preLayout) { // 已有数据的位置更新（todo：信息更新）
           // _eleIn.animate(_data)
           // Object.keys(_data).forEach(key => {
           //   console.log('_eleIn[key] && _eleIn[key]() !== _data[key] = ', key_eleIn[key] && _eleIn[key]() !== _data[key], _data[key])
           //   _eleIn[key] && _eleIn[key]() !== _data[key] && _eleIn[key](_data[key])
           // })
-          if (_eleIn.isNode() && this.preLayout) {
-            let _x = _eleIn.position('x')
-            let _y = _eleIn.position('y')
-            const { x, y } = _data.position || {}
-            ;(_x !== x || _y !== y) && _eleIn.position({ x, y })
-          }
+          let _x = _eleIn.position('x')
+          let _y = _eleIn.position('y')
+          const { x, y } = _data.position || {}
+          ;(_x !== x || _y !== y) && _eleIn.position({ x, y })
         }
       })
       this.$cytoscapeInstance.add(_addData)
       this.renderFilter()
-      let layout = this.$cytoscapeInstance.layout(this.cytoscapeOptions.layout)
       this.$cytoscapeInstance.endBatch()
-      layout.run()
+      this.reLayout()
     }, 100, this),
     createCytoscape: debounce(function (data) {
       let _option = mergeArrayConcat({}, this.cytoscapeOptions || {}, {
         container: this.$refs.cytoscapeBox,
         elements: data
       })
+      delete _option.layout
       this.$cytoscapeInstance = cytoscape(_option)
+      this.reLayout()
       // register all the component events as cytoscape ones
       this.events = this.events.concat(createEvents(this.$cytoscapeInstance))
       for (const [eventType, callback] of Object.entries(this.$listeners)) {
@@ -267,14 +264,18 @@ export default {
           this.$cytoscapeInstance.off(eventType, func)
         })
       }
-      if (this.preLayout) {
-        this.$cytoscapeInstance.on('render', this.rendered)
-        this.events.push(() => {
-          this.$cytoscapeInstance.off('render', this.rendered)
-        })
-      }
+      this.$cytoscapeInstance.on('render', this.rendered)
+      this.events.push(() => {
+        this.$cytoscapeInstance.off('render', this.rendered)
+      })
+
       this.$emit('init', this.$cytoscapeInstance)
     }, 100, this),
+    reLayout () {
+      this.$layout && this.$layout.stop()
+      this.$layout = this.$cytoscapeInstance.layout(this.cytoscapeOptions.layout)
+      this.$layout.run()
+    },
     async destroy () {
       if (this.$cytoscapeInstance) {
         await this.events.forEach(func => {
@@ -302,14 +303,15 @@ export default {
       this.renderFilter(relayout)
       return _randomId
     },
-    renderFilter (relayout) {
+    renderFilter: debounce(function (relayout) {
       if (!this.$cytoscapeInstance) return
       this.$cytoscapeInstance.startBatch()
       let _removeData = this.$removeData || this.$cytoscapeInstance.collection()
       let _inviewData = this.$cytoscapeInstance.elements()
       let _allElements = _inviewData.merge(_removeData)
-      let _filterElements = _allElements.filter(ele => {
-        return Object.keys(this.filters).every(key => this.filters[key](ele, _allElements))
+      let _filterElements = _allElements
+      Object.keys(this.filters).forEach(key => {
+        _filterElements = this.filters[key](_filterElements)
       })
       let _filterNodes = _filterElements.nodes()
       let _filterEdges = _filterElements.edges().filter(ele => {
@@ -320,12 +322,9 @@ export default {
       this.$removeData = _allElements.difference(_filterElements)
       this.$cytoscapeInstance.add(_filterElements)
       this.$cytoscapeInstance.endBatch()
-      if (relayout) {
-        let layout = this.$cytoscapeInstance.layout(this.cytoscapeOptions.layout)
-        layout.run()
-      }
+      relayout && this.reLayout()
       return _filterElements
-    },
+    }, 100, this),
     webWorkerCallBack (event) {
       switch (event.data.type) {
         case "tick":
@@ -338,6 +337,7 @@ export default {
       }
     },
     reCalcGraph: debounce(function () {
+      this.loading = this.reLoading()
       if (this.preLayout) {
         this.createWebWorker()
       } else {
@@ -345,21 +345,21 @@ export default {
       }
     }, 100, this),
     reLoading () {
-      // this.$cytoscapeInstance && this.$cytoscapeInstance.remove(this.$cytoscapeInstance.elements())
-      this.loading.layoutPregress = 0
-      this.loading.rendered = false
+      return {
+        layoutPregress: this.preLayout ? 0 : 100,
+        rendered: false
+      }
     },
     rendered () {
       this.loading.rendered = true
     },
     transData (data) {
       if (!data || !data.length || !this.$webWorker) return
-      let _nodes = data.filter(_d => _d.group === 'nodes' && (_d.data.group === 'house' || _d.data.group === 'cup' || _d.data.group === 'tree' || _d.data.group === 'person'))
-      let _edges = data.filter(_d => _d.group === 'edges' && [_d.data.source, _d.data.target].every(_id => _nodes.find(n => n.data.id === _id)))
-      this.$webWorker.postMessage({ data, steps: [_nodes.concat(_edges)], width: this.$el.clientWidth, height: this.$el.clientHeight })
+      // let _nodes = data.filter(_d => _d.group === 'nodes' && (_d.data.group === 'house' || _d.data.group === 'cup' || _d.data.group === 'tree' || _d.data.group === 'person'))
+      // let _edges = data.filter(_d => _d.group === 'edges' && [_d.data.source, _d.data.target].every(_id => _nodes.find(n => n.data.id === _id)))
+      this.$webWorker.postMessage({ data, steps: [], width: this.$el.clientWidth, height: this.$el.clientHeight })
     },
     createWebWorker () {
-      this.reLoading()
       if (!this.$webWorker) {
         this.$webWorker = new webWorker()
         this.$webWorker.onmessage = this.webWorkerCallBack

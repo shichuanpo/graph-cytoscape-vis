@@ -60,29 +60,23 @@ const cytoscapeOption = {
       selector: 'node',
       style: JSON.parse(JSON.stringify(nodesBaseStyle))
     },
-    {
-      selector: 'node:selected',
-      style: {
-        'border-width': 1
-      }
-    },
-    {
-      selector: 'node[label]',
-      style: {
-        label: 'data(label)',
-        'font-size': '9px',
-        color: '#666',
-        'z-index': 2
-      }
-    },
+    // {
+    //   selector: 'node[label]',
+    //   style: {
+    //     label: 'data(label)',
+    //     'font-size': '9px',
+    //     color: '#666',
+    //     'z-index': 2
+    //   }
+    // },
     {
       selector: 'edge',
       style: JSON.parse(JSON.stringify(edgesBaseStyle))
     },
-    {
-      selector: 'edge[label]',
-      style: { 'font-size': '9px', color: '#626867', 'z-index': 1 }
-    },
+    // {
+    //   selector: 'edge[label]',
+    //   style: { 'font-size': '9px', color: '#626867', 'z-index': 1 }
+    // },
     {
       selector: '.hover',
       style: {
@@ -110,12 +104,6 @@ const cytoscapeOption = {
       style: {
         width: 1,
         'opacity': 0.3
-      }
-    },
-    {
-      selector: '.hide',
-      style: {
-        display: 'none'
       }
     }
   ]

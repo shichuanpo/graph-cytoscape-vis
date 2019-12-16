@@ -105,6 +105,17 @@ export default {
                 'curve-style': 'bezier',
                 'target-arrow-shape': 'vee'
               }
+            }, {
+              selector: 'node[label]',
+              style: {
+                label: 'data(label)',
+                'font-size': '9px',
+                color: '#666',
+                'z-index': 2
+              }
+            }, {
+              selector: 'edge[label]',
+              style: { 'font-size': '9px', color: '#626867', 'z-index': 1 }
             }],
           layout: {
             name: 'cola',
@@ -269,25 +280,25 @@ export default {
       let _categoryNames = Object.keys(legendModel).filter(key => !legendModel[key])
       if (type === 'nodes') {
         if (_categoryNames.length) {
-          this.legendNodeFilterId = _cy.filterByFunction(ele => {
-            return ele.isEdge() || (ele.isNode() && !_categoryNames.includes(ele.data('group')))
+          this.legendNodeFilterId = _cy.filterByFunction(allEle => {
+            return allEle.filter(ele => ele.isEdge() || (ele.isNode() && !_categoryNames.includes(ele.data('group'))))
           }, this.legendNodeFilterId)
         } else {
           this.legendNodeFilterId && _cy.resetFilter(this.legendNodeFilterId)
         }
       } else {
         if (_categoryNames.length) {
-          this.legendEdgeFilterId = _cy.filterByFunction((ele, allEle) => {
+          this.legendEdgeFilterId = _cy.filterByFunction((allEle) => {
             let _filterEdges = allEle.filter(ele => ele.isEdge() && !_categoryNames.includes(ele.data('group')))
-            return _filterEdges.contains(ele) || _filterEdges.some(_edge => _edge.source() === ele || _edge.target() === ele)
-          }, this.legendEdgeFilterId, true)
+            return allEle.filter(ele => _filterEdges.contains(ele) || _filterEdges.some(_edge => _edge.source() === ele || _edge.target() === ele))
+          }, this.legendEdgeFilterId)
         } else {
-          this.legendEdgeFilterId && _cy.resetFilter(this.legendEdgeFilterId, true)
+          this.legendEdgeFilterId && _cy.resetFilter(this.legendEdgeFilterId)
         }
       }
     },
     cytoscapeInit (cy) {
-      // cy.contextMenus(this.options.contextMenus)
+      cy.contextMenus(this.options.contextMenus)
     },
     addNode (e) {
       // e.target.lock()
@@ -297,7 +308,6 @@ export default {
       //   c.data.parent = _targetId
       // })
       this.graphData = this.graphData.concat(_children)
-      console.log('this.graphData = ', this.graphData)
       // console.log('e.target.data = ', _datas)
     },
     createTippy (e) {
