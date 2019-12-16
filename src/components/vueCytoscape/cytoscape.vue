@@ -216,6 +216,7 @@ export default {
      * 所以手动了一个方法
      */
     setData: debounce(function (data) {
+      this.$removeData = null
       let _dataWithClasses = this.getDataWithClasses(data)
       if (!this.$cytoscapeInstance) return this.createCytoscape(_dataWithClasses)
       this.$cytoscapeInstance.startBatch()
@@ -248,9 +249,9 @@ export default {
     createCytoscape: debounce(function (data) {
       let _option = mergeArrayConcat({}, this.cytoscapeOptions || {}, {
         container: this.$refs.cytoscapeBox,
-        elements: data
+        elements: data,
+        layout: this.preLayoutOption
       })
-      delete _option.layout
       this.$cytoscapeInstance = cytoscape(_option)
       this.reLayout()
       // register all the component events as cytoscape ones
