@@ -50,9 +50,6 @@ const __merge = function (type = 'merge', target, source) {
     } else {
       target = source
     }
-  } else {
-    return
-    // console.error('target or source must be Object or Array')
   }
   return target
 }
@@ -69,7 +66,7 @@ const _merge = function () {
   } else if (objs.length === 2) {
     return objs[1]
   } else {
-    return
+    return null
     // console.error('target or source cannot be null')
   }
 }

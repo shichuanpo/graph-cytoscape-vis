@@ -32,7 +32,7 @@
 </template>
 <script>
 import { merge, isObject } from './util'
-import defaultConfig from './config.js'
+import { legendOption, baseColor } from './config.js'
 export default {
   name: 'vue-legend',
   props: {
@@ -87,7 +87,7 @@ export default {
      * 合并图例的配置信息
      */
     legend () {
-      return merge({}, defaultConfig || {}, this.options || {}) || {}
+      return merge({}, legendOption || {}, this.options || {}) || {}
     },
     /****
      * 根据图例配置生成每个item的配置
@@ -102,18 +102,32 @@ export default {
      * } 可以为item配置
      */
     dataWithStyle () {
-      const { tagStyle, activeTagStyle, inactiveTagStyle, textStyle, activeTextStyle, inactiveTextStyle, formatter } = this.legend
-      return this.data.map(item => {
+      const { tagStyle, activeTagStyle, inactiveTagStyle, textStyle, activeTextStyle, inactiveTextStyle, formatter } = legendOption
+      return (this.data || []).map((item, _idx) => {
+        const _defaultOption = merge({}, { tagStyle, activeTagStyle, inactiveTagStyle, textStyle, activeTextStyle, inactiveTextStyle, formatter })
+        let _color = baseColor[_idx % baseColor.length]
         if (isObject(item)) {
           if (item.name) {
-            return merge({}, {
-              tagStyle, activeTagStyle, inactiveTagStyle, textStyle, activeTextStyle, inactiveTextStyle, formatter
-            }, item, this.options || {}) || {}
+            let _item = merge({}, {
+              activeTagStyle: {
+                'backgroundColor': _color,
+                'borderColor': _color
+              },
+              activeTextStyle: { color: _color }
+            }, item)
+            return merge(_defaultOption, _item, this.options || {})
           } else {
             console.error('请给图例添加命名name！')
           }
         } else if (typeof item === 'string') {
-          return { tagStyle, activeTagStyle, inactiveTagStyle, textStyle, activeTextStyle, inactiveTextStyle, formatter, name: item }
+          return merge(_defaultOption, {
+            activeTagStyle: {
+              'backgroundColor': _color,
+              'borderColor': _color
+            },
+            activeTextStyle: { color: _color },
+            name: item
+          }, this.options || {})
         } else {
           console.error('传参错误，data为对象数组或者字符串数组！')
         }
@@ -127,17 +141,17 @@ export default {
       if (this.legend.type === 'scroll') {
         if (this.legend.orient === 'horizontal') {
           return {
-            'margin-right': styleText
+            'marginRight': styleText
           }
         } else if (this.legend.orient === 'vertical') {
           return {
-            'margin-bottom': styleText
+            'marginBottom': styleText
           }
         }
       }
       return {
-        'margin-right': styleText,
-        'margin-bottom': styleText,
+        'marginRight': styleText,
+        'marginBottom': styleText,
         'cursor': this.legend.disabled ? 'default' : 'pointer'
       }
     },
@@ -151,16 +165,16 @@ export default {
           let left = this.itemsWH.slice(0, this.currentPage - 1).reduce((total, current) => {
             return total + current.width
           }, 0)
-          style['margin-left'] = -left + 'px'
+          style.marginLeft = -left + 'px'
           return {
-            'margin-left': -left + 'px',
+            marginLeft: -left + 'px',
             transition: 'all 0.6s'
           }
         } else if (this.legend.orient === 'vertical') {
           let top = this.itemsWH.slice(0, this.currentPage - 1).reduce((total, current) => {
             return total + current.height
           }, 0)
-          style['margin-top'] = -top + 'px'
+          style.marginTop = -top + 'px'
         }
         if (this.legend.animation) {
           style.transition = `all ${this.legend.animationDurationUpdate}s`
@@ -221,6 +235,9 @@ export default {
         borderBottomWidth,
         borderRightWidth,
         left,
+        top,
+        bottom,
+        right
       } = window.getComputedStyle(this.$refs.legend, null)
       let padding = {
         top: Number(paddingTop.replace('px', '')),
@@ -240,10 +257,16 @@ export default {
         bottom: Number(borderBottomWidth.replace('px', '')),
         right: Number(borderRightWidth.replace('px', ''))
       }
+      let position = {
+        top: Number(top.replace('px', '')),
+        left: Number(left.replace('px', '')),
+        bottom: Number(bottom.replace('px', '')),
+        right: Number(right.replace('px', ''))
+      }
       this.legendHeight = this.$refs.legend.clientHeight - (padding.top + padding.bottom)
       this.legendWidth = this.$refs.legend.clientWidth - (padding.left + padding.right)
-      let maxLegendHeight = this.$el.clientHeight - (padding.top + padding.bottom + margin.top + margin.bottom + border.top + border.bottom)
-      let maxLegendWidth = this.$el.clientWidth - (padding.left + padding.right + margin.left + margin.right + border.left + border.right)
+      let maxLegendHeight = this.$el.clientHeight - (padding.top + padding.bottom + margin.top + margin.bottom + border.top + border.bottom + position.top + position.bottom)
+      let maxLegendWidth = this.$el.clientWidth - (padding.left + padding.right + margin.left + margin.right + border.left + border.right + position.left + position.right)
       let itemsHeight = 0
       let itemsWidth = 0
       let items = []

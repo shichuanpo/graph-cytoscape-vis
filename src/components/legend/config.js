@@ -1,5 +1,6 @@
-export default {
-  show: false,
+const baseColor = ['#c23531', '#2f4554', '#61a0a8', '#d48265', '#91c7ae', '#749f83', '#ca8622', '#bda29a', '#6e7074', '#546570', '#c4ccd3']
+const legendOption = {
+  show: true,
   type: 'scroll', // plain： 普通图例 / scroll： 滚动图例
   orient: 'vertical', // horizontal: 横向图例 ／ vertical: 纵向图例
   /**
@@ -64,4 +65,8 @@ export default {
     color: '#ccc'
   },
   formatter: string => string // 格式转换，翻译
+}
+export {
+  baseColor,
+  legendOption
 }

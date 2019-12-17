@@ -13,6 +13,7 @@
 options | cytoscape原生配置，包括布局， 样式等等；详见cytoscape文档: http://js.cytoscape.org/#introduction | Object | - | {} | 
 data | cytoscape的图数据 | Array | - | [] |
 category | 分类配置，详见下表 | Object | - | {} |
+preLayout | 是否前置布局，忽略cytoscape布局模式 | Boolean | true/false | false |
 
 ##### options
 ```javascript
@@ -165,6 +166,21 @@ data = [{
 </table>
 
 ```javascript
+/**
+ * 分类配置：两种写法
+ * 写法一：
+ * {
+ *   key: 指定获取数据中的某个字段
+ *   styles: 分类样式，可以为Array/Object键值对
+ * }
+ * 写法二：
+ * [{
+ *    name: '分类1',
+ *    matching: data => data.label === '分类1', // 目前只支持函数
+ *    style, // 具体参考cytoscape官网样式规范
+ *    formatter: name => name // 格式转换，翻译
+ * }]
+ * **/
 category = {
     nodes: [{
       name: 'category1',
@@ -237,7 +253,8 @@ init | cytoscape实例创建完毕 | Cytoscape实例
 :-: | :-: | :-: | :-: | :-:
 value / v-model | 绑定值 | Object | - | -|
 data | 图例数据 | Array | - | []|
-options | 图例配置 | Object | - | {}| 
+options | 图例配置 | Object | - | {}|
+
 ##### options
 ```javascript
 options = {
@@ -330,7 +347,8 @@ value / v-model | 绑定值 | Object | - | -|
 data | cytoscape渲染数据 | Array | - | [] |
 options | 图例配置 | Object | - | {}| 
 type | 图例类型 | String | nodes/edges | nodes| 
-category | 图例分类配置 | Object | - | {}| 
+category | 图例分类配置 | Object | - | {}|
+
 #### category
 <table>
     <tr>

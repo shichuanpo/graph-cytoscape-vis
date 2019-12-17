@@ -1,7 +1,7 @@
 <template lang="pug">
   .cytoscape--container
     .cytoscape--container__graph(ref="cytoscapeBox")
-    .cytoscape--container__loading(v-if="loading.layoutPregress < 100 || !loading.rendered")
+    .cytoscape--container__loading(v-if="loading.layoutPregress < 100 || !loading.layoutstart")
       .progress-bar(v-if="loading.layoutPregress < 100")
         .progress-bar__outer
           .progress-bar__inner(:style="{width: progressText}")
@@ -13,8 +13,6 @@
 </template>
 <script>
 import cytoscape from 'cytoscape'
-// import mockdata from '../mock/data';
-// import createCytoscape from './createCytoscape'
 import createEvents from './createEvents'
 import { merge, mergeArrayConcat, isObject, isArray, isFunction, debounce, createId } from './util'
 import { categoryOption, cytoscapeOption } from './config.js'
@@ -248,12 +246,10 @@ export default {
     }, 100, this),
     createCytoscape: debounce(function (data) {
       let _option = mergeArrayConcat({}, this.cytoscapeOptions || {}, {
-        container: this.$refs.cytoscapeBox,
-        elements: data,
-        layout: this.preLayoutOption
+        container: this.$refs.cytoscapeBox
       })
       this.$cytoscapeInstance = cytoscape(_option)
-      this.reLayout()
+      this.setData(data)
       // register all the component events as cytoscape ones
       this.events = this.events.concat(createEvents(this.$cytoscapeInstance))
       for (const [eventType, callback] of Object.entries(this.$listeners)) {
@@ -265,11 +261,10 @@ export default {
           this.$cytoscapeInstance.off(eventType, func)
         })
       }
-      this.$cytoscapeInstance.on('render', this.rendered)
+      this.$cytoscapeInstance.on('layoutstart', this.layoutstart)
       this.events.push(() => {
-        this.$cytoscapeInstance.off('render', this.rendered)
+        this.$cytoscapeInstance.off('layoutstart', this.layoutstart)
       })
-
       this.$emit('init', this.$cytoscapeInstance)
     }, 100, this),
     reLayout () {
@@ -304,7 +299,7 @@ export default {
       this.renderFilter(relayout)
       return _randomId
     },
-    renderFilter: debounce(function (relayout) {
+    renderFilter: function (relayout) {
       if (!this.$cytoscapeInstance) return
       this.$cytoscapeInstance.startBatch()
       let _removeData = this.$removeData || this.$cytoscapeInstance.collection()
@@ -325,7 +320,7 @@ export default {
       this.$cytoscapeInstance.endBatch()
       relayout && this.reLayout()
       return _filterElements
-    }, 100, this),
+    },
     webWorkerCallBack (event) {
       switch (event.data.type) {
         case "tick":
@@ -348,11 +343,11 @@ export default {
     reLoading () {
       return {
         layoutPregress: this.preLayout ? 0 : 100,
-        rendered: false
+        layoutstart: false
       }
     },
-    rendered () {
-      this.loading.rendered = true
+    layoutstart () {
+      this.loading.layoutstart = true
     },
     transData (data) {
       if (!data || !data.length || !this.$webWorker) return
