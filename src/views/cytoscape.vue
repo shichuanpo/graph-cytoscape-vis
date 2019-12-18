@@ -1,6 +1,6 @@
 <template lang="pug">
 .cytoscape
-  vue-cytoscape.cytoscape(ref="cytoscape", :options="options.cytoscape", :category="options.category", :data="graphData", @init="cytoscapeInit", @mouseover="createTippy")
+  vue-cytoscape.cytoscape(ref="cytoscape", :options="options.cytoscape", :category="options.category", :data="graphData", @mouseover="createTippy", @ready="cytoscapeInit")
   vue-cytoscape-legend.legend(:data="graphData", v-model="legendNodeModel", :options="options.nodeLegend", :category="options.category.nodes")
   vue-cytoscape-legend.legend(:data="graphData", v-model="legendEdgeModel", type="edges", :options="options.edgeLegend", :category="options.category.edges")
     //- .navigator
@@ -18,7 +18,6 @@ import 'tippy.js/themes/light.css'
 import 'tippy.js/themes/light-border.css'
 import 'tippy.js/themes/google.css'
 import 'tippy.js/themes/translucent.css'
-import cytoscape from 'cytoscape'
 export default {
   name: 'cytoscapePage',
   data () {
@@ -297,8 +296,8 @@ export default {
         }
       }
     },
-    cytoscapeInit (cy) {
-      cy.contextMenus(this.options.contextMenus)
+    cytoscapeInit (e) {
+      e.cy.contextMenus(this.options.contextMenus)
     },
     addNode (e) {
       // e.target.lock()

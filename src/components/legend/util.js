@@ -128,17 +128,6 @@ function colorRgba (color = '', alpha = 1) {
     return color
   }
 }
-function debounce (fn, delay, ctx) {
-  let timer = null
-  return function () {
-    let context = ctx || this
-    let args = arguments
-    clearTimeout(timer)
-    timer = setTimeout(function () {
-      fn.apply(context, args)
-    }, delay)
-  }
-}
 export {
   isObject,
   isArray,
@@ -149,6 +138,5 @@ export {
   mergeArrayConcat,
   mergeArrayReplace,
   createId,
-  colorRgba,
-  debounce
+  colorRgba
 }

@@ -243,7 +243,7 @@ category = {
 #### events
 事件名 | 说明 | 参数
 :-: | :-: | :-:
-init | cytoscape实例创建完毕 | Cytoscape实例
+update | cytoscape实例数据更新（包括 数据重置，添加，删除，过滤等等） | cytoscape事件
 
 其他详见cytoscape文档: http://js.cytoscape.org/#introduction
 

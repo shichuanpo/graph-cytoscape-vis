@@ -1,8 +1,8 @@
 <template lang="pug">
   .cytoscape--container
     .cytoscape--container__graph(ref="cytoscapeBox")
-    .cytoscape--container__loading(v-if="loading.layoutPregress < 100 || !loading.layoutstart")
-      .progress-bar(v-if="loading.layoutPregress < 100")
+    .cytoscape--container__loading(v-if="loading.layoutPregress < 1 || !loading.layoutstart")
+      .progress-bar(v-if="loading.layoutPregress < 1")
         .progress-bar__outer
           .progress-bar__inner(:style="{width: progressText}")
         .text 正在计算布局，请稍后 {{progressText}}
@@ -14,7 +14,7 @@
 <script>
 import cytoscape from 'cytoscape'
 import createEvents from './createEvents'
-import { merge, mergeArrayConcat, isObject, isArray, isFunction, debounce, createId } from './util'
+import { merge, mergeArrayConcat, isObject, isArray, isFunction, createId, debounce } from './util'
 import { categoryOption, cytoscapeOption } from './config.js'
 import webWorker from './file.worker.js'
 export default {
@@ -244,12 +244,11 @@ export default {
       this.$cytoscapeInstance.endBatch()
       this.reLayout()
     }, 100, this),
-    createCytoscape: debounce(function (data) {
+    createCytoscape (data) {
       let _option = mergeArrayConcat({}, this.cytoscapeOptions || {}, {
         container: this.$refs.cytoscapeBox
       })
       this.$cytoscapeInstance = cytoscape(_option)
-      this.setData(data)
       // register all the component events as cytoscape ones
       this.events = this.events.concat(createEvents(this.$cytoscapeInstance))
       for (const [eventType, callback] of Object.entries(this.$listeners)) {
@@ -265,8 +264,9 @@ export default {
       this.events.push(() => {
         this.$cytoscapeInstance.off('layoutstart', this.layoutstart)
       })
-      this.$emit('init', this.$cytoscapeInstance)
-    }, 100, this),
+      this.$cytoscapeInstance.ready()
+      data && data.length && this.setData(data)
+    },
     reLayout () {
       this.$layout && this.$layout.stop()
       this.$layout = this.$cytoscapeInstance.layout(this.cytoscapeOptions.layout)
@@ -319,6 +319,7 @@ export default {
       this.$cytoscapeInstance.add(_filterElements)
       this.$cytoscapeInstance.endBatch()
       relayout && this.reLayout()
+      this.$cytoscapeInstance.emit('update') // 自定义事件 update
       return _filterElements
     },
     webWorkerCallBack (event) {
@@ -327,22 +328,22 @@ export default {
           this.loading.layoutPregress = event.data.progress
           break;
         case "end":
-          this.loading.layoutPregress = 100
+          this.loading.layoutPregress = 1
           this.setData(event.data.data)
           break;
       }
     },
-    reCalcGraph: debounce(function () {
+    reCalcGraph () {
       this.loading = this.reLoading()
       if (this.preLayout) {
         this.createWebWorker()
       } else {
         this.setData(this.data)
       }
-    }, 100, this),
+    },
     reLoading () {
       return {
-        layoutPregress: this.preLayout ? 0 : 100,
+        layoutPregress: this.preLayout ? 0 : 1,
         layoutstart: false
       }
     },
@@ -360,7 +361,7 @@ export default {
         this.$webWorker = new webWorker()
         this.$webWorker.onmessage = this.webWorkerCallBack
       }
-      this.transData(this.data)
+      this.data && this.data.length && this.transData(this.data)
     }
   },
   mounted () {

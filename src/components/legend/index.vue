@@ -234,10 +234,7 @@ export default {
         borderLeftWidth,
         borderBottomWidth,
         borderRightWidth,
-        left,
-        top,
-        bottom,
-        right
+        left
       } = window.getComputedStyle(this.$refs.legend, null)
       let padding = {
         top: Number(paddingTop.replace('px', '')),
@@ -257,16 +254,10 @@ export default {
         bottom: Number(borderBottomWidth.replace('px', '')),
         right: Number(borderRightWidth.replace('px', ''))
       }
-      let position = {
-        top: Number(top.replace('px', '')),
-        left: Number(left.replace('px', '')),
-        bottom: Number(bottom.replace('px', '')),
-        right: Number(right.replace('px', ''))
-      }
       this.legendHeight = this.$refs.legend.clientHeight - (padding.top + padding.bottom)
       this.legendWidth = this.$refs.legend.clientWidth - (padding.left + padding.right)
-      let maxLegendHeight = this.$el.clientHeight - (padding.top + padding.bottom + margin.top + margin.bottom + border.top + border.bottom + position.top + position.bottom)
-      let maxLegendWidth = this.$el.clientWidth - (padding.left + padding.right + margin.left + margin.right + border.left + border.right + position.left + position.right)
+      let maxLegendHeight = this.$el.clientHeight - (padding.top + padding.bottom + margin.top + margin.bottom + border.top + border.bottom)
+      let maxLegendWidth = this.$el.clientWidth - (padding.left + padding.right + margin.left + margin.right + border.left + border.right)
       let itemsHeight = 0
       let itemsWidth = 0
       let items = []
