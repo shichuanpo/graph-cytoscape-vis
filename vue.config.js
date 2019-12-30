@@ -13,7 +13,7 @@ module.exports = {
   chainWebpack: config => {
     config.output.globalObject('this')
   },
-  publicPath: './demo/',
+  publicPath: '/graph-cytoscape-vis/demo/', // GitHub Pages
   outputDir: 'demo',
   indexPath: 'index.html'
 }
