@@ -13,7 +13,6 @@
 options | cytoscape原生配置，包括布局， 样式等等；详见cytoscape文档: http://js.cytoscape.org/#introduction | Object | - | {} | 
 data | cytoscape的图数据 | Array | - | [] |
 category | 分类配置，详见下表 | Object | - | {} |
-preLayout | 是否前置布局，忽略cytoscape布局模式 | Boolean | true/false | false |
 
 ##### options
 ```javascript
