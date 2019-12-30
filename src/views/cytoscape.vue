@@ -4,6 +4,15 @@
   vue-cytoscape-legend.legend(:data="graphData", v-model="legendNodeModel", :options="options.nodeLegend", :category="options.category.nodes")
   vue-cytoscape-legend.legend(:data="graphData", v-model="legendEdgeModel", type="edges", :options="options.edgeLegend", :category="options.category.edges")
     //- .navigator
+  .cytoscape--container__loading(v-if="!options.cytoscape.layout.animate && layoutProgress < 1")
+    .center(v-if="layoutProgress === 0")
+      svg.circular(viewBox="25 25 50 50")
+        circle.path(cx="50" cy="50" r="20" fill="none")
+      .text 正在解析图谱，请稍后...
+    .progress-bar(v-else)
+      .progress-bar__outer
+        .progress-bar__inner(:style="{width: progressText}")
+      .text 正在计算布局，请稍后 {{progressText}}
 </template>
 
 <script>
@@ -22,6 +31,7 @@ export default {
   name: 'cytoscapePage',
   data () {
     return {
+      layoutProgress: 0,
       tooltip: {},
       options: {
         nodeLegend: {
@@ -117,54 +127,30 @@ export default {
               style: { 'font-size': '9px', color: '#626867', 'z-index': 1 }
             }],
           layout: {
-            name: 'cola',
-            animate: true, // whether to show the layout as it's running
-            refresh: 10, // number of ticks per frame; higher is faster but more jerky
-            maxSimulationTime: 3000, // max length in ms to run the layout
-            ungrabifyWhileSimulating: false, // so you can't drag nodes during layout
-            fit: false, // on every layout reposition of nodes, fit the viewport
-            padding: 30, // padding around the simulation
-            boundingBox: undefined, // constrain layout bounds; { x1, y1, x2, y2 } or { x1, y1, w, h }
-            nodeDimensionsIncludeLabels: false, // whether labels should be included in determining the space used by a node
-
-            // layout event callbacks
-            ready: function(e){
-              // let _hasLocked = 0
-              // while (_hasLocked < 3) {
-              //   _hasLocked++
-              //   let _maxDegreeNode = e.cy.nodes().filter(node => !node.locked()).max(ele => ele.degree())
-              //   _maxDegreeNode.ele.lock()
-              // }
-            }, // on layoutready
-            stop: function(e){
-              e.cy.nodes().unlock()
+            name: 'd3-force',
+            animate: true,
+            // maxIterations: 20,
+            linkId: function id(d) {
+              return d.id;
+            },
+            linkDistance: 100,
+            manyBodyStrength: -300,
+            xX: 500,
+            yY: 500,
+            ready: function(){},
+            stop: (e) => {
+              console.log('e == ', e)
+              this.layoutProgress = 1
+              // console.log('layoutstop - ');
+              // setTimeout(() => {
+              //   e.cy.fit()
+              // }, 100)
             }, // on layoutstop
-
-            // positioning options
-            randomize: false, // use random node positions at beginning of layout
-            avoidOverlap: true, // if true, prevents overlap of node bounding boxes
-            handleDisconnected: true, // if true, avoids disconnected components from overlapping
-            convergenceThreshold: 0.01, // when the alpha value (system energy) falls below this value, the layout stops
-            // nodeSpacing: function( node ){ return node.degree(); }, // extra spacing around nodes
-            flow: undefined, // use DAG/tree flow layout if specified, e.g. { axis: 'y', minSeparation: 30 }
-            alignment: undefined, // relative alignment constraints on nodes, e.g. function( node ){ return { x: 0, y: 1 } }
-            gapInequalities: undefined, // list of inequality constraints for the gap between the nodes, e.g. [{"axis":"y", "left":node1, "right":node2, "gap":25}]
-
-            // different methods of specifying edge length
-            // each can be a constant numerical value or a function like `function( edge ){ return 2; }`
-            edgeLength: function(edge){
-              let degrees = edge.connectedNodes().map(node => node.degree())
-              return 60 + (Math.min(degrees[0], degrees[1]) - 1) * 60 * 0.3 + (Math.max(degrees[0], degrees[1]) - 1) * 10 * 0.3
-            }, // sets edge length directly in simulation
-            edgeSymDiffLength: undefined, // symmetric diff edge length in simulation
-            edgeJaccardLength: undefined, // jaccard edge length in simulation
-
-            // iterations of cola algorithm; uses default values on undefined
-            unconstrIter: undefined, // unconstrained initial layout iterations
-            userConstIter: undefined, // initial layout iterations with user-specified constraints
-            allConstIter: undefined, // initial layout iterations with all constraints including non-overlap
-
-            // infinite layout options
+            tick: (progress) => {
+              this.layoutProgress = progress
+              // console.log('progress - ', progress);
+            },
+            randomize: false,
             infinite: true
           }},
         contextMenus: {
@@ -259,6 +245,11 @@ export default {
       legendEdgeModel: {}
     };
   },
+  computed: {
+    progressText () {
+      return (this.layoutProgress * 100).toFixed(1) + '%'
+    },
+  },
   watch: {
     legendNodeModel: {
       handler (newVal) {
@@ -281,18 +272,18 @@ export default {
         if (_categoryNames.length) {
           this.legendNodeFilterId = _cy.filterByFunction(allEle => {
             return allEle.filter(ele => ele.isEdge() || (ele.isNode() && !_categoryNames.includes(ele.data('group'))))
-          }, this.legendNodeFilterId)
+          }, this.legendNodeFilterId, true)
         } else {
-          this.legendNodeFilterId && _cy.resetFilter(this.legendNodeFilterId)
+          this.legendNodeFilterId && _cy.resetFilter(this.legendNodeFilterId, true)
         }
       } else {
         if (_categoryNames.length) {
           this.legendEdgeFilterId = _cy.filterByFunction((allEle) => {
             let _filterEdges = allEle.filter(ele => ele.isEdge() && !_categoryNames.includes(ele.data('group')))
             return allEle.filter(ele => _filterEdges.contains(ele) || _filterEdges.some(_edge => _edge.source() === ele || _edge.target() === ele))
-          }, this.legendEdgeFilterId)
+          }, this.legendEdgeFilterId, true)
         } else {
-          this.legendEdgeFilterId && _cy.resetFilter(this.legendEdgeFilterId)
+          this.legendEdgeFilterId && _cy.resetFilter(this.legendEdgeFilterId, true)
         }
       }
     },
@@ -300,13 +291,16 @@ export default {
       e.cy.contextMenus(this.options.contextMenus)
     },
     addNode (e) {
-      // e.target.lock()
+      e.target.lock()
       let _targetId = e.target.id()
       let _children = createChildren(_targetId, 2)
       // _children.forEach(c => {
       //   c.data.parent = _targetId
       // })
       this.graphData = this.graphData.concat(_children)
+      e.cy.delay(1000, function () {
+        e.target.unlock()
+      })
       // console.log('e.target.data = ', _datas)
     },
     createTippy (e) {
@@ -334,7 +328,9 @@ export default {
     }
   },
   mounted () {
-    this.graphData = data
+    setTimeout(() => {
+      this.graphData = data
+    }, 100)
   }
 }
 </script>
@@ -362,5 +358,64 @@ export default {
 //   bottom: 0;
 //   border: 1px solid #ccc;
 // }
+.cytoscape--container__loading{
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    z-index: 2000;
+    background: #fff;
+    .progress-bar{
+      top: 50%;
+      margin-top: -15px;
+      left: 20%;
+      width: 60%;
+      text-align: center;
+      position: absolute;
+      overflow: hidden;
+      .progress-bar__outer{
+        width: 100%;
+        border-radius: 100px;
+        margin: 16px 0;
+        height: 10px;
+        background-color: #ebeef5;
+        overflow: hidden;
+        position: relative;
+        vertical-align: middle;
+        .progress-bar__inner{
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          background-color: #409eff;
+          text-align: right;
+          border-radius: 100px;
+          line-height: 1;
+          white-space: nowrap;
+        }
+      }
+    }
+    .center{
+      top: 50%;
+      margin-top: -21px;
+      width: 100%;
+      text-align: center;
+      position: absolute;
+      .circular{
+        height: 42px;
+        width: 42px;
+        animation: loading-rotate 2s linear infinite;
+        .path {
+          animation: loading-dash 1.5s ease-in-out infinite;
+          stroke-dasharray: 90,150;
+          stroke-dashoffset: 0;
+          stroke-width: 2;
+          stroke: #409eff;
+          stroke-linecap: round;
+        }
+      }
+    }
+  }
 </style>
 

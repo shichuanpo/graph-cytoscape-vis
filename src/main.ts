@@ -6,6 +6,7 @@ import vueCytoscape from '@/components/vueCytoscape'
 import ElementUI from 'element-ui'
 import 'element-ui/lib/theme-chalk/index.css'
 import cola from 'cytoscape-cola'
+import d3Force from 'cytoscape-d3-force'
 // import fcose from 'cytoscape-fcose'
 // import euler from 'cytoscape-euler';
 // import cyforcelayout from 'cytoscape-ngraph.forcelayout'
@@ -24,8 +25,8 @@ Vue.use(vueCytoscape, {
     // Cytoscape.use(klay)
     Cytoscape.use(contextMenus, $)
     Cytoscape.use( popper )
+    Cytoscape.use(d3Force)
     Cytoscape.use(cola)
-    // Cytoscape.use(euler)
     // cyforcelayout(Cytoscape)
     // navigator(Cytoscape)
   }

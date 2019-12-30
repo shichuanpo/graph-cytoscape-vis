@@ -131,6 +131,7 @@ function colorRgba (color = '', alpha = 1) {
 function debounce (fn, delay, ctx) {
   let timer = null
   return function () {
+    console.log('arg - ', arguments)
     let context = ctx || this
     let args = arguments
     clearTimeout(timer)

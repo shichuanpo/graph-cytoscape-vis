@@ -45,11 +45,6 @@ const categoryOption = {
    * cytoscape配置： 完全参照cytoscape配置，详见cytoscape文档: http://js.cytoscape.org/#introduction
    * **/
 const cytoscapeOption = {
-  layout: {
-    name: 'random',
-    randomize: true,
-    animate: false
-  },
   style: [
     {
       selector: ':active',
