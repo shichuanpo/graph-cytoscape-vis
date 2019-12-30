@@ -13,5 +13,7 @@ module.exports = {
   chainWebpack: config => {
     config.output.globalObject('this')
   },
-  publicPath: '/'
+  publicPath: '/demo/',
+  outputDir: 'demo',
+  indexPath: 'index.html'
 }

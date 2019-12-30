@@ -2,7 +2,7 @@
 
 ## Demo
 
-[关系图实例](https://shichuanpo.github.io/graph-cytoscape-vis/dist/#/cytoscape)
+[关系图实例](https://shichuanpo.github.io/graph-cytoscape-vis/demo)
 
 ## components
 
