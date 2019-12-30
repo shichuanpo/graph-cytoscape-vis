@@ -12,5 +12,6 @@ module.exports = {
   parallel: false,
   chainWebpack: config => {
     config.output.globalObject('this')
-  }
+  },
+  publicPath: '/'
 }
